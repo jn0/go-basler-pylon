@@ -24,6 +24,8 @@ class CameraWrapper {
         void stopCapture();
         void attachDevice();
         void configureCamera();
+        int batchCaptured();
+        int totalCaptured();
 
     private:
         CameraWrapper() {}
@@ -32,6 +34,10 @@ class CameraWrapper {
 
         std::mutex captureMutex;
         int captureStatus;
+        int batchCapturedQty;
+        int totalCapturedQty;
+
+        std::mutex captureStopMutex;
 
         std::mutex attachMutex;
         int attachStatus;
@@ -53,6 +59,14 @@ void configureCameraCPP() {
     CameraWrapper::getInstance().configureCamera();
 }
 
+int batchCapturedCPP() {
+    return CameraWrapper::getInstance().batchCaptured();
+}
+
+int totalCapturedCPP() {
+    return CameraWrapper::getInstance().totalCaptured();
+}
+
 void startCaptureCPP(int batch, char* outputPath) {
     std::string op;
     op.assign(outputPath);
@@ -60,11 +74,16 @@ void startCaptureCPP(int batch, char* outputPath) {
 }
 
 void CameraWrapper::stopCapture() {
-    this->captureMutex.lock();
     if(this->captureStatus==CAPTURE_STATUS_GRABBING) {
+        this->captureMutex.lock();
         this->captureStatus=CAPTURE_STATUS_STOP_GRABBING;
+        this->captureMutex.unlock();
+
+        // HACK: Two calls to this mutex will block and depend on the start loop to complete and unlock
+        this->captureStopMutex.lock();
+        this->captureStopMutex.lock();
+        this->captureStopMutex.unlock();
     }
-    this->captureMutex.unlock();
 }
 
 void CameraWrapper::attachDevice() {
@@ -84,6 +103,7 @@ void CameraWrapper::startCapture(int batch, std::string outputPath) {
         return;
     }
     this->captureStatus=CAPTURE_STATUS_GRABBING;
+    this->batchCapturedQty=0;
     this->captureMutex.unlock();
     this->attachDevice();
     
@@ -93,8 +113,8 @@ void CameraWrapper::startCapture(int batch, std::string outputPath) {
         // The camera device is parameterized with a default configuration which
         // sets up free-running continuous acquisition.
         // GrabLoop_ProvidedByUser for testing
-        // camera.StartGrabbing(Pylon::GrabStrategy_OneByOne, Pylon::GrabLoop_ProvidedByInstantCamera);
-        this->camera.StartGrabbing(Pylon::GrabStrategy_OneByOne, Pylon::GrabLoop_ProvidedByUser);
+        this->camera.StartGrabbing(Pylon::GrabStrategy_OneByOne, Pylon::GrabLoop_ProvidedByInstantCamera);
+        // this->camera.StartGrabbing(Pylon::GrabStrategy_OneByOne, Pylon::GrabLoop_ProvidedByUser);
 
         // This smart pointer will receive the grab result data.
         Pylon::CGrabResultPtr ptrGrabResult;
@@ -131,6 +151,8 @@ void CameraWrapper::startCapture(int batch, std::string outputPath) {
                         paddingX,
                         Pylon::ImageOrientation_TopDown,NULL);
 
+            this->totalCapturedQty++;
+            this->batchCapturedQty++;
             } else {
                 std::cout << "Error: " << ptrGrabResult->GetErrorCode() << " " << ptrGrabResult->GetErrorDescription() << std::endl;
             }
@@ -139,6 +161,9 @@ void CameraWrapper::startCapture(int batch, std::string outputPath) {
             if(this->captureStatus==CAPTURE_STATUS_STOP_GRABBING) {
                 this->captureStatus = CAPTURE_STATUS_IDLE;
                 this->captureMutex.unlock();
+
+                // HACK: Unblock stopCapture call
+                this->captureStopMutex.unlock();
                 camera.StopGrabbing();
                 break;
             }
@@ -154,10 +179,19 @@ void CameraWrapper::startCapture(int batch, std::string outputPath) {
     }
 
 }
+
 void CameraWrapper::configureCamera() {
     this->camera.GainAuto.SetValue(Basler_GigECamera::GainAuto_Continuous);
     this->camera.GainRaw.SetValue(1);
     this->camera.BlackLevelRaw.SetValue(90);
     this->camera.DigitalShift.SetValue(1);
     this->camera.ExposureAuto.SetValue(Basler_GigECamera::ExposureAuto_Continuous);
+}
+
+int CameraWrapper::batchCaptured() {
+    return this->batchCapturedQty;
+}
+
+int CameraWrapper::totalCaptured() {
+    return this->totalCapturedQty;
 }

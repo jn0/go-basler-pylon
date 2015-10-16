@@ -12,3 +12,11 @@ void attachDevice() {
 void configureCamera() {
 	configureCameraCPP();
 }
+
+int batchCaptured() {
+	return batchCapturedCPP();
+}
+
+int totalCaptured() {
+	return totalCapturedCPP();
+}
