@@ -57,8 +57,18 @@ func (c *Camera) AttachDevice() {
 	}
 }
 
-func (c *Camera) ConfigureCamera() {
+func (c *Camera) ConfigureCamera() error {
+	c.openMutex.Lock()
+	defer c.openMutex.Unlock()
+	if !C.isOpen() {
+		return fmt.Errorf("Camera is not open.")
+	}
 	C.configureCamera()
+	return nil
+}
+
+func (c *Camera) SetHardwareTriggerConfiguration() {
+	C.setHardwareTriggerConfiguration()
 }
 
 func (c *Camera) Grab(batch, timeout int, outputPath string) error {

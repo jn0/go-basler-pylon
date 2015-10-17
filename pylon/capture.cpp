@@ -19,6 +19,7 @@ class CameraWrapper {
         std::string grab(int batch, int timeout, std::string outputPath);
         std::string startCapture();
         void configureCamera();
+        void setHardwareTriggerConfiguration();
 
     private:
         CameraWrapper() {}
@@ -39,6 +40,10 @@ void attachDevice() {
 
 void configureCamera() {
     CameraWrapper::getInstance().configureCamera();
+}
+
+void setHardwareTriggerConfiguration() {
+    CameraWrapper::getInstance().setHardwareTriggerConfiguration();
 }
 
 const char* grab(int batch, int timeout, char* outputPath) {
@@ -153,4 +158,96 @@ void CameraWrapper::configureCamera() {
     this->camera.BlackLevelRaw.SetValue(90);
     this->camera.DigitalShift.SetValue(1);
     this->camera.ExposureAuto.SetValue(Basler_GigECamera::ExposureAuto_Continuous);
+}
+
+/*
+
+Configuration classes
+
+*/
+
+class CHardwareTriggerConfiguration : public Pylon::CConfigurationEventHandler {
+public:
+    static void ApplyConfiguration( GenApi::INodeMap& nodemap)
+    {
+        //Disable all trigger types.
+        // Get required enumerations.
+        GenApi::CEnumerationPtr triggerSelector( nodemap.GetNode("TriggerSelector"));
+        GenApi::CEnumerationPtr triggerMode( nodemap.GetNode("TriggerMode"));
+
+        // Check the available camera trigger mode(s) to select the appropriate one: acquisition start trigger mode 
+        // (used by previous cameras, i.e. for cameras supporting only the legacy image acquisition control mode;
+        // do not confuse with acquisition start command) or frame start trigger mode
+        // (used by newer cameras, i.e.for cameras using the standard image acquisition control mode;
+        // equivalent to the acquisition start trigger mode in the legacy image acquisition control mode).
+        Pylon::String_t triggerName( "FrameStart");
+        if ( !IsAvailable( triggerSelector->GetEntryByName(triggerName)))
+        {
+            triggerName = "AcquisitionStart";
+            if ( !IsAvailable( triggerSelector->GetEntryByName(triggerName)))
+            {
+                throw RUNTIME_EXCEPTION( "Could not select trigger. Neither FrameStart nor AcquisitionStart is available.");
+            }
+        }
+
+        // Get all enumeration entries of Trigger Selector.
+        GenApi::NodeList_t triggerSelectorEntries;
+        triggerSelector->GetEntries( triggerSelectorEntries );
+
+        // Turn Trigger Mode off For all Trigger Selector entries.
+        for ( GenApi::NodeList_t::iterator it = triggerSelectorEntries.begin(); it != triggerSelectorEntries.end(); ++it) 
+        {
+            // Set Trigger Mode to off if the trigger is available.
+            GenApi::CEnumEntryPtr pEntry(*it);
+            if ( IsAvailable( pEntry)) 
+            {
+                Pylon::String_t triggerNameOfEntry( pEntry->GetSymbolic());
+                triggerSelector->FromString( triggerNameOfEntry);
+                if ( triggerName == triggerNameOfEntry)
+                {
+                    // Activate trigger.
+                    triggerMode->FromString( "On");
+
+                    //// The trigger source must be set to the trigger input, e.g. 'Line1'.
+                    GenApi::CEnumerationPtr(nodemap.GetNode("TriggerSource"))->FromString("Line1");
+
+                    ////The trigger activation must be set to e.g. 'RisingEdge'.
+                    GenApi::CEnumerationPtr(nodemap.GetNode("TriggerActivation"))->FromString("RisingEdge");
+                }
+                else
+                {
+                    triggerMode->FromString( "Off");
+                }
+            }
+        }
+        
+
+        //Set acquisition mode.
+        GenApi::CEnumerationPtr(nodemap.GetNode("AcquisitionMode"))->FromString("Continuous");
+    }
+
+    //Set basic camera settings
+    virtual void OnOpened( Pylon::CInstantCamera& camera)
+    {
+        try
+        {
+            ApplyConfiguration( camera.GetNodeMap());
+        }
+        catch (GenICam::GenericException& e)
+        {
+            throw RUNTIME_EXCEPTION( "Could not apply configuration. GenICam::GenericException caught in OnOpened method msg=%hs", e.what());
+        }
+        catch (std::exception& e)
+        {
+            throw RUNTIME_EXCEPTION( "Could not apply configuration. std::exception caught in OnOpened method msg=%hs", e.what());
+        }
+        catch (...)
+        {
+            throw RUNTIME_EXCEPTION( "Could not apply configuration. Unknown exception caught in OnOpened method.");
+        }
+    }
+};
+
+void CameraWrapper::setHardwareTriggerConfiguration() {
+    this->camera.RegisterConfiguration(new CHardwareTriggerConfiguration, Pylon::RegistrationMode_ReplaceAll, Pylon::Cleanup_Delete);
 }

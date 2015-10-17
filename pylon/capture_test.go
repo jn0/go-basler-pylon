@@ -17,6 +17,8 @@ func TestStart(t *testing.T) {
 
 	cam.AttachDevice()
 	cam.OpenCamera()
+	defer cam.CloseCamera()
+	cam.ConfigureCamera()
 
 	if e := cam.StartCapture(); e != nil {
 		t.Fatal(e)
@@ -36,5 +38,30 @@ func TestStart(t *testing.T) {
 		t.Fatalf("No scans taken.")
 	} else {
 		t.Logf("Scanned %s", n[0])
+	}
+}
+
+func TestHardwareTrigger(t *testing.T) {
+	cam := &Camera{}
+	imgPath := path.Join(os.TempDir(), "go-basler-pylon-test")
+	os.RemoveAll(imgPath)
+
+	if e := os.MkdirAll(imgPath, 0777); e != nil {
+		t.Fatal(e)
+	}
+
+	cam.AttachDevice()
+	cam.SetHardwareTriggerConfiguration()
+	cam.OpenCamera()
+	defer cam.CloseCamera()
+	cam.ConfigureCamera()
+
+	if e := cam.StartCapture(); e != nil {
+		t.Fatal(e)
+	}
+	defer cam.StopCapture()
+
+	if e := cam.Grab(1, 1000, imgPath+"/"); e == nil {
+		t.Fatalf("Expected timeout.")
 	}
 }

@@ -18,6 +18,7 @@ void closeCamera();
 bool isCameraGrabbing();
 bool isAttached();
 bool isOpen();
+void setHardwareTriggerConfiguration();
 
 #ifdef __cplusplus
 }
