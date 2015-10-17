@@ -3,15 +3,19 @@
 
 #ifdef __cplusplus 
 extern "C" {
+#else
+#include <stdbool.h>
 #endif
 
 // prototypes
-void startCapture(int batch, char* outputPath);
 void stopCapture();
 void attachDevice();
 void configureCamera();
-int batchCaptured();
-int totalCaptured();
+const char* grab(int batch, int timeout, char* outputPath);
+const char* startCapture();
+void openCamera();
+void closeCamera();
+bool isCameraGrabbing();
 
 #ifdef __cplusplus
 }

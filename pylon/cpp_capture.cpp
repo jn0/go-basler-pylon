@@ -1,17 +1,6 @@
 // Include files to use the PYLON API.
 #include <pylon/PylonIncludes.h>
 #include <pylon/gige/BaslerGigEInstantCamera.h>
-#include <mutex>
-
-// Namespace for using pylon objects.
-// using namespace Pylon;
-
-const int CAPTURE_STATUS_IDLE=0;
-const int CAPTURE_STATUS_GRABBING=1;
-const int CAPTURE_STATUS_STOP_GRABBING=2;
-
-const int ATTACH_STATUS_NOT_ATTACHED=0;
-const int ATTACH_STATUS_ATTACHED=1;
 
 class CameraWrapper {
     public:
@@ -20,164 +9,127 @@ class CameraWrapper {
             static CameraWrapper    instance;
             return instance;
         }
-        void startCapture(int batch, std::string outputPath);
         void stopCapture();
         void attachDevice();
+        void openCamera();
+        void closeCamera();
+        bool isGrabbing();
+        std::string grab(int batch, int timeout, std::string outputPath);
+        std::string startCapture();
         void configureCamera();
-        int batchCaptured();
-        int totalCaptured();
 
     private:
         CameraWrapper() {}
         CameraWrapper(CameraWrapper const&);              // Don't Implement.
         void operator=(CameraWrapper const&); // Don't implement
 
-        std::mutex captureMutex;
-        int captureStatus;
-        int batchCapturedQty;
-        int totalCapturedQty;
-
-        std::mutex captureStopMutex;
-
-        std::mutex attachMutex;
-        int attachStatus;
-
         Pylon::CBaslerGigEInstantCamera camera;
         Pylon::PylonAutoInitTerm autoInitTerm;
-
 };
 
-void stopCaptureCPP() {
+void stopCapture() {
     CameraWrapper::getInstance().stopCapture();
 }
 
-void attachDeviceCPP() {
+void attachDevice() {
     CameraWrapper::getInstance().attachDevice();
 }
 
-void configureCameraCPP() {
+void configureCamera() {
     CameraWrapper::getInstance().configureCamera();
 }
 
-int batchCapturedCPP() {
-    return CameraWrapper::getInstance().batchCaptured();
-}
-
-int totalCapturedCPP() {
-    return CameraWrapper::getInstance().totalCaptured();
-}
-
-void startCaptureCPP(int batch, char* outputPath) {
+const char* grab(int batch, int timeout, char* outputPath) {
     std::string op;
     op.assign(outputPath);
-    CameraWrapper::getInstance().startCapture(batch,op);
+    return CameraWrapper::getInstance().grab(batch,timeout,op).c_str();
+}
+const char* startCapture() {
+    return CameraWrapper::getInstance().startCapture().c_str();
 }
 
-void CameraWrapper::stopCapture() {
-    if(this->captureStatus==CAPTURE_STATUS_GRABBING) {
-        this->captureMutex.lock();
-        this->captureStatus=CAPTURE_STATUS_STOP_GRABBING;
-        this->captureMutex.unlock();
+void openCamera() {
+    CameraWrapper::getInstance().openCamera();
+}
 
-        // HACK: Two calls to this mutex will block and depend on the start loop to complete and unlock
-        this->captureStopMutex.lock();
-        this->captureStopMutex.lock();
-        this->captureStopMutex.unlock();
-    }
+void closeCamera() {
+    CameraWrapper::getInstance().closeCamera();
+}
+
+bool isCameraGrabbing() {
+    return CameraWrapper::getInstance().isGrabbing();
+}
+
+
+void CameraWrapper::stopCapture() {
+    camera.Close();
 }
 
 void CameraWrapper::attachDevice() {
-    this->attachMutex.lock();
-    if(this->attachStatus==ATTACH_STATUS_NOT_ATTACHED) {
-        this->camera.Attach(Pylon::CTlFactory::GetInstance().CreateFirstDevice());
-        this->camera.Open();
-        this->attachStatus = ATTACH_STATUS_ATTACHED;
-    }
-    this->attachMutex.unlock();
+    std::cout << "Attached.";
+    this->camera.Attach(Pylon::CTlFactory::GetInstance().CreateFirstDevice());
 }
 
-void CameraWrapper::startCapture(int batch, std::string outputPath) {
-    this->captureMutex.lock();
-    if(this->captureStatus!=CAPTURE_STATUS_IDLE) {
-        this->captureMutex.unlock();
-        return;
-    }
-    this->captureStatus=CAPTURE_STATUS_GRABBING;
-    this->batchCapturedQty=0;
-    this->captureMutex.unlock();
-    this->attachDevice();
-    
+void CameraWrapper::openCamera() {
+    std::cout << "Opened.";
+    this->camera.Open();
+}
+
+void CameraWrapper::closeCamera() {
+    std::cout << "Close.";
+    this->camera.Close();
+}
+
+bool CameraWrapper::isGrabbing() {
+    return this->camera.IsGrabbing();
+}
+
+std::string CameraWrapper::grab(int batch, int timeout, std::string outputPath) {
+    Pylon::CGrabResultPtr ptrGrabResult;
+
+    std::ostringstream result;
     try {
-
-        // Start the grabbing of c_countOfImagesToGrab images.
-        // The camera device is parameterized with a default configuration which
-        // sets up free-running continuous acquisition.
-        // GrabLoop_ProvidedByUser for testing
-        this->camera.StartGrabbing(Pylon::GrabStrategy_OneByOne, Pylon::GrabLoop_ProvidedByInstantCamera);
-        // this->camera.StartGrabbing(Pylon::GrabStrategy_OneByOne, Pylon::GrabLoop_ProvidedByUser);
-
-        // This smart pointer will receive the grab result data.
-        Pylon::CGrabResultPtr ptrGrabResult;
-
-        while (this->camera.IsGrabbing()) {
-            // Wait for an image and then retrieve it. A timeout of 5000 ms is used.
-            bool retrieved = this->camera.RetrieveResult(5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
-            if(!retrieved) {
-                std::cerr << "RetrieveResult false" << std::endl;
-                continue;
-            }
-
-            // Image grabbed successfully?
-            if (retrieved && ptrGrabResult->GrabSucceeded()) {
-                Pylon::EPixelType pixelType = ptrGrabResult->GetPixelType();
-                uint32_t width = ptrGrabResult->GetWidth();
-                uint32_t height = ptrGrabResult->GetHeight();
-                size_t paddingX = ptrGrabResult->GetPaddingX();
-                size_t bufferSize = ptrGrabResult->GetImageSize();
-                void* buffer = ptrGrabResult->GetBuffer();
-                
-                std::ostringstream nameStream;
-                
-                nameStream << outputPath << batch << "_" << ptrGrabResult->GetTimeStamp() << ".tiff";
-                
-                Pylon::CImagePersistence::Save(
-                        Pylon::ImageFileFormat_Tiff,
-                        nameStream.str().c_str(),
-                        buffer,
-                        bufferSize,
-                        pixelType,
-                        width,
-                        height,
-                        paddingX,
-                        Pylon::ImageOrientation_TopDown,NULL);
-
-            this->totalCapturedQty++;
-            this->batchCapturedQty++;
-            } else {
-                std::cout << "Error: " << ptrGrabResult->GetErrorCode() << " " << ptrGrabResult->GetErrorDescription() << std::endl;
-            }
-
-            this->captureMutex.lock();
-            if(this->captureStatus==CAPTURE_STATUS_STOP_GRABBING) {
-                this->captureStatus = CAPTURE_STATUS_IDLE;
-                this->captureMutex.unlock();
-
-                // HACK: Unblock stopCapture call
-                this->captureStopMutex.unlock();
-                camera.StopGrabbing();
-                break;
-            }
-            this->captureMutex.unlock();
+        if(this->camera.RetrieveResult(timeout, ptrGrabResult, Pylon::TimeoutHandling_ThrowException) && ptrGrabResult->GrabSucceeded()) {
+            Pylon::EPixelType pixelType = ptrGrabResult->GetPixelType();
+            uint32_t width = ptrGrabResult->GetWidth();
+            uint32_t height = ptrGrabResult->GetHeight();
+            size_t paddingX = ptrGrabResult->GetPaddingX();
+            size_t bufferSize = ptrGrabResult->GetImageSize();
+            void* buffer = ptrGrabResult->GetBuffer();
+            
+            std::ostringstream nameStream;
+            nameStream << outputPath << batch << "_" << ptrGrabResult->GetTimeStamp() << ".tiff";
+            
+            Pylon::CImagePersistence::Save(
+                    Pylon::ImageFileFormat_Tiff,
+                    nameStream.str().c_str(),
+                    buffer,
+                    bufferSize,
+                    pixelType,
+                    width,
+                    height,
+                    paddingX,
+                    Pylon::ImageOrientation_TopDown,NULL);
+        } else {
+            result << "Error: " << ptrGrabResult->GetErrorCode() << " " << ptrGrabResult->GetErrorDescription();
+            
         }
+    } catch (GenICam::GenericException &e) {
+        result << e.GetDescription();
+    }
+    return result.str();
+}
+
+std::string CameraWrapper::startCapture() {
+    std::ostringstream result;
+    try {
+        this->camera.StartGrabbing(Pylon::GrabStrategy_OneByOne, Pylon::GrabLoop_ProvidedByInstantCamera);
     } catch (GenICam::GenericException &e) {
         camera.Close();
         // Error handling.
-        std::cerr << "An exception occurred." << std::endl << e.GetDescription() << std::endl;
-        this->captureMutex.lock();
-        this->captureStatus = CAPTURE_STATUS_IDLE;
-        this->captureMutex.unlock();
+        result << "An exception occurred." << std::endl << e.GetDescription() << std::endl;
     }
-
+    return result.str();
 }
 
 void CameraWrapper::configureCamera() {
@@ -186,12 +138,4 @@ void CameraWrapper::configureCamera() {
     this->camera.BlackLevelRaw.SetValue(90);
     this->camera.DigitalShift.SetValue(1);
     this->camera.ExposureAuto.SetValue(Basler_GigECamera::ExposureAuto_Continuous);
-}
-
-int CameraWrapper::batchCaptured() {
-    return this->batchCapturedQty;
-}
-
-int CameraWrapper::totalCaptured() {
-    return this->totalCapturedQty;
 }

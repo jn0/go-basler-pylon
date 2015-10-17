@@ -5,41 +5,81 @@ package pylon
 import "C"
 
 import (
+	"fmt"
 	"sync"
 )
 
 type Camera struct {
-	start      bool
 	startMutex sync.Mutex
+
+	attached, opened         bool
+	attachedMutex, openMutex sync.Mutex
 }
 
-func (c *Camera) StartCapture(batchId int, outputPath string) (e error) {
-	c.startMutex.Lock()
-	if !c.start {
-		c.start = true
-		c.startMutex.Unlock()
-		_, e = C.startCapture(C.int(batchId), C.CString(outputPath))
-	} else {
-		c.startMutex.Unlock()
+func (c *Camera) OpenCamera() error {
+	c.openMutex.Lock()
+	defer c.openMutex.Unlock()
+	if !c.opened {
+		if _, e := C.openCamera(); e != nil {
+			return e
+		}
+		c.opened = true
 	}
-	return
+	return nil
 }
 
-func (c *Camera) StopCapture() (e error) {
+func (c *Camera) CloseCamera() error {
+	c.openMutex.Lock()
+	defer c.openMutex.Unlock()
+	if !c.opened {
+		if _, e := C.closeCamera(); e != nil {
+			return e
+		}
+		c.opened = false
+	}
+	return nil
+}
+
+func (c *Camera) StartCapture() error {
 	c.startMutex.Lock()
 	defer c.startMutex.Unlock()
-	if c.start {
-		_, e = C.stopCapture()
-
-		// If error assume stop unsuccessful
-		c.start = e != nil
+	if !C.isCameraGrabbing() {
+		if s, e := C.startCapture(); e != nil {
+			return e
+		} else if errMsg := C.GoString(s); errMsg != "" {
+			return fmt.Errorf(errMsg)
+		}
 	}
-	return
+	return nil
+}
+
+func (c *Camera) StopCapture() error {
+	c.startMutex.Lock()
+	defer c.startMutex.Unlock()
+	if C.isCameraGrabbing() {
+		if _, e := C.stopCapture(); e != nil {
+			return e
+		}
+
+	}
+	return nil
 }
 
 func (c *Camera) AttachDevice() error {
-	_, e := C.attachDevice()
-	return e
+	fmt.Println("Attach device")
+	c.attachedMutex.Lock()
+	defer c.attachedMutex.Unlock()
+	if !c.attached {
+		fmt.Println("Attach device do it")
+		if x, e := C.attachDevice(); e != nil {
+			fmt.Println("Attach device do it err", e)
+			return e
+		} else {
+			fmt.Println(x)
+		}
+		c.attached = true
+	}
+	return nil
 }
 
 func (c *Camera) ConfigureCamera() error {
@@ -47,15 +87,11 @@ func (c *Camera) ConfigureCamera() error {
 	return e
 }
 
-func (c *Camera) batchCaptured() (int, error) {
-	i, e := C.batchCaptured()
-	return int(i), e
-}
-func (c *Camera) totalCaptured() (int, error) {
-	i, e := C.totalCaptured()
-	return int(i), e
-}
-
-func (c *Camera) Started() bool {
-	return c.start
+func (c *Camera) Grab(batch, timeout int, outputPath string) error {
+	if s, e := C.grab(C.int(batch), C.int(timeout), C.CString(outputPath)); e != nil {
+		return e
+	} else if errMsg := C.GoString(s); errMsg != "" {
+		return fmt.Errorf(errMsg)
+	}
+	return nil
 }
