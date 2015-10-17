@@ -16,6 +16,8 @@ const char* startCapture();
 void openCamera();
 void closeCamera();
 bool isCameraGrabbing();
+bool isAttached();
+bool isOpen();
 
 #ifdef __cplusplus
 }

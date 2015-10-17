@@ -10,87 +10,60 @@ import (
 )
 
 type Camera struct {
-	startMutex sync.Mutex
-
-	attached, opened         bool
-	attachedMutex, openMutex sync.Mutex
+	startMutex, attachedMutex, openMutex sync.Mutex
 }
 
-func (c *Camera) OpenCamera() error {
+func (c *Camera) OpenCamera() {
 	c.openMutex.Lock()
 	defer c.openMutex.Unlock()
-	if !c.opened {
-		if _, e := C.openCamera(); e != nil {
-			return e
-		}
-		c.opened = true
+	if !C.isOpen() {
+		C.openCamera()
 	}
-	return nil
 }
 
-func (c *Camera) CloseCamera() error {
+func (c *Camera) CloseCamera() {
 	c.openMutex.Lock()
 	defer c.openMutex.Unlock()
-	if !c.opened {
-		if _, e := C.closeCamera(); e != nil {
-			return e
-		}
-		c.opened = false
+	if C.isOpen() {
+		C.closeCamera()
 	}
-	return nil
 }
 
 func (c *Camera) StartCapture() error {
 	c.startMutex.Lock()
 	defer c.startMutex.Unlock()
 	if !C.isCameraGrabbing() {
-		if s, e := C.startCapture(); e != nil {
-			return e
-		} else if errMsg := C.GoString(s); errMsg != "" {
+		s := C.startCapture()
+		if errMsg := C.GoString(s); errMsg != "" {
 			return fmt.Errorf(errMsg)
 		}
 	}
 	return nil
 }
 
-func (c *Camera) StopCapture() error {
+func (c *Camera) StopCapture() {
 	c.startMutex.Lock()
 	defer c.startMutex.Unlock()
 	if C.isCameraGrabbing() {
-		if _, e := C.stopCapture(); e != nil {
-			return e
-		}
-
+		C.stopCapture()
 	}
-	return nil
 }
 
-func (c *Camera) AttachDevice() error {
-	fmt.Println("Attach device")
+func (c *Camera) AttachDevice() {
 	c.attachedMutex.Lock()
 	defer c.attachedMutex.Unlock()
-	if !c.attached {
-		fmt.Println("Attach device do it")
-		if x, e := C.attachDevice(); e != nil {
-			fmt.Println("Attach device do it err", e)
-			return e
-		} else {
-			fmt.Println(x)
-		}
-		c.attached = true
+	if !C.isAttached() {
+		C.attachDevice()
 	}
-	return nil
 }
 
-func (c *Camera) ConfigureCamera() error {
-	_, e := C.configureCamera()
-	return e
+func (c *Camera) ConfigureCamera() {
+	C.configureCamera()
 }
 
 func (c *Camera) Grab(batch, timeout int, outputPath string) error {
-	if s, e := C.grab(C.int(batch), C.int(timeout), C.CString(outputPath)); e != nil {
-		return e
-	} else if errMsg := C.GoString(s); errMsg != "" {
+	s := C.grab(C.int(batch), C.int(timeout), C.CString(outputPath))
+	if errMsg := C.GoString(s); errMsg != "" {
 		return fmt.Errorf(errMsg)
 	}
 	return nil

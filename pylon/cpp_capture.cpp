@@ -14,6 +14,8 @@ class CameraWrapper {
         void openCamera();
         void closeCamera();
         bool isGrabbing();
+        bool isAttached();
+        bool isOpen();
         std::string grab(int batch, int timeout, std::string outputPath);
         std::string startCapture();
         void configureCamera();
@@ -60,23 +62,27 @@ bool isCameraGrabbing() {
     return CameraWrapper::getInstance().isGrabbing();
 }
 
+bool isAttached() {
+    return CameraWrapper::getInstance().isAttached();
+}
+
+bool isOpen() {
+    return CameraWrapper::getInstance().isOpen();
+}
 
 void CameraWrapper::stopCapture() {
     camera.Close();
 }
 
 void CameraWrapper::attachDevice() {
-    std::cout << "Attached.";
     this->camera.Attach(Pylon::CTlFactory::GetInstance().CreateFirstDevice());
 }
 
 void CameraWrapper::openCamera() {
-    std::cout << "Opened.";
     this->camera.Open();
 }
 
 void CameraWrapper::closeCamera() {
-    std::cout << "Close.";
     this->camera.Close();
 }
 
@@ -84,10 +90,17 @@ bool CameraWrapper::isGrabbing() {
     return this->camera.IsGrabbing();
 }
 
+bool CameraWrapper::isAttached() {
+    return this->camera.IsPylonDeviceAttached();
+}
+
+bool CameraWrapper::isOpen() {
+    return this->camera.IsOpen();
+}
+
 std::string CameraWrapper::grab(int batch, int timeout, std::string outputPath) {
     Pylon::CGrabResultPtr ptrGrabResult;
 
-    std::ostringstream result;
     try {
         if(this->camera.RetrieveResult(timeout, ptrGrabResult, Pylon::TimeoutHandling_ThrowException) && ptrGrabResult->GrabSucceeded()) {
             Pylon::EPixelType pixelType = ptrGrabResult->GetPixelType();
@@ -111,25 +124,27 @@ std::string CameraWrapper::grab(int batch, int timeout, std::string outputPath) 
                     paddingX,
                     Pylon::ImageOrientation_TopDown,NULL);
         } else {
-            result << "Error: " << ptrGrabResult->GetErrorCode() << " " << ptrGrabResult->GetErrorDescription();
+            std::ostringstream result;
+            result << ptrGrabResult->GetErrorCode() << " " << ptrGrabResult->GetErrorDescription();
+            return result.str();
             
         }
     } catch (GenICam::GenericException &e) {
-        result << e.GetDescription();
+        return e.GetDescription();
     }
-    return result.str();
+    return "";
 }
 
 std::string CameraWrapper::startCapture() {
-    std::ostringstream result;
     try {
-        this->camera.StartGrabbing(Pylon::GrabStrategy_OneByOne, Pylon::GrabLoop_ProvidedByInstantCamera);
+        // Pylon::GrabLoop_ProvidedByInstantCamera
+        this->camera.StartGrabbing(Pylon::GrabStrategy_OneByOne, Pylon::GrabLoop_ProvidedByUser);
     } catch (GenICam::GenericException &e) {
         camera.Close();
         // Error handling.
-        result << "An exception occurred." << std::endl << e.GetDescription() << std::endl;
+        return e.GetDescription();
     }
-    return result.str();
+    return "";
 }
 
 void CameraWrapper::configureCamera() {
