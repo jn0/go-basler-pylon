@@ -11,7 +11,7 @@ extern "C" {
 void stopCapture();
 void attachDevice();
 void configureCamera();
-const char* grab(int batch, int timeout, char* outputPath);
+const char* retrieveAndSave(int batch, int timeout, char* outputPath);
 const char* startCapture();
 void openCamera();
 void closeCamera();

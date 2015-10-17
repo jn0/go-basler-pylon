@@ -16,7 +16,7 @@ class CameraWrapper {
         bool isGrabbing();
         bool isAttached();
         bool isOpen();
-        std::string grab(int batch, int timeout, std::string outputPath);
+        std::string retrieveAndSave(int batch, int timeout, std::string outputPath);
         std::string startCapture();
         void configureCamera();
         void setHardwareTriggerConfiguration();
@@ -46,10 +46,10 @@ void setHardwareTriggerConfiguration() {
     CameraWrapper::getInstance().setHardwareTriggerConfiguration();
 }
 
-const char* grab(int batch, int timeout, char* outputPath) {
+const char* retrieveAndSave(int batch, int timeout, char* outputPath) {
     std::string op;
     op.assign(outputPath);
-    return CameraWrapper::getInstance().grab(batch,timeout,op).c_str();
+    return CameraWrapper::getInstance().retrieveAndSave(batch,timeout,op).c_str();
 }
 const char* startCapture() {
     return CameraWrapper::getInstance().startCapture().c_str();
@@ -103,7 +103,7 @@ bool CameraWrapper::isOpen() {
     return this->camera.IsOpen();
 }
 
-std::string CameraWrapper::grab(int batch, int timeout, std::string outputPath) {
+std::string CameraWrapper::retrieveAndSave(int batch, int timeout, std::string outputPath) {
     Pylon::CGrabResultPtr ptrGrabResult;
 
     try {

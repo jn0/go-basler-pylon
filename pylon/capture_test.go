@@ -25,7 +25,7 @@ func TestStart(t *testing.T) {
 	}
 	defer cam.StopCapture()
 
-	if e := cam.Grab(1, 5000, imgPath+"/"); e != nil {
+	if e := cam.RetrieveAndSave(1, 5000, imgPath+"/"); e != nil {
 		t.Fatal(e)
 	}
 
@@ -61,7 +61,7 @@ func TestHardwareTrigger(t *testing.T) {
 	}
 	defer cam.StopCapture()
 
-	if e := cam.Grab(1, 1000, imgPath+"/"); e == nil {
+	if e := cam.RetrieveAndSave(1, 1000, imgPath+"/"); e == nil {
 		t.Fatalf("Expected timeout.")
 	}
 }
