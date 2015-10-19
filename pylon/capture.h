@@ -19,6 +19,9 @@ bool isCameraGrabbing();
 bool isAttached();
 bool isOpen();
 void setHardwareTriggerConfiguration();
+void setNodeMapIntParam(char* name, int value);
+void setNodeMapFloatParam(char* name, double value);
+void setNodeMapEnumParam(char* name, char* value);
 
 #ifdef __cplusplus
 }

@@ -51,10 +51,14 @@ func TestHardwareTrigger(t *testing.T) {
 	}
 
 	cam.AttachDevice()
-	cam.SetHardwareTriggerConfiguration()
 	cam.OpenCamera()
 	defer cam.CloseCamera()
-	cam.ConfigureCamera()
+	if e := cam.SetHardwareTriggerConfiguration(); e != nil {
+		t.Fatal(e)
+	}
+	if e := cam.ConfigureCamera(); e != nil {
+		t.Fatal(e)
+	}
 
 	if e := cam.StartCapture(); e != nil {
 		t.Fatal(e)
