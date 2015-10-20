@@ -109,7 +109,7 @@ func (cam *Camera) setNodeMapEnum(name IEnumerationT, value interface{}) error {
 	return nil
 }
 
-func (cam *Camera) setNodeMapFloat(name IEnumerationT, value interface{}) error {
+func (cam *Camera) setNodeMapFloat(name IFloat, value interface{}) error {
 	cName := C.CString(string(name))
 	defer C.free(unsafe.Pointer(cName))
 	if v, ok := value.(float64); !ok {
