@@ -2,8 +2,12 @@ package pylon
 
 type ParamGroup int
 
-func (p ParamGroup) String() string {
+func (p ParamGroup) Description() string {
 	return groupParamDescription[p]
+}
+
+func (p ParamGroup) String() string {
+	return groupParamName[p]
 }
 
 type Param struct {
@@ -139,6 +143,59 @@ var (
 		"This category includes items available for an io virtual line 3 rising edge event",
 		"This category includes items available for an io virtual line 4 rising edge event",
 		"This category includes items used to conduct file operations",
+	}
+
+	groupParamName = [...]string{
+		"SequenceControl",
+		"SequenceControlConfiguration",
+		"AnalogControls",
+		"ImageFormat",
+		"DeviceInformation",
+		"ColorImprovementsControl",
+		"AOI",
+		"StackedZoneImaging",
+		"AcquisitionTrigger",
+		"DigitalIO",
+		"VirtualInput",
+		"ShaftEncoderModule",
+		"FrequencyConverter",
+		"TimerControls",
+		"TimerSequence",
+		"LUTControls",
+		"TransportLayer",
+		"ActionControl",
+		"DeviceControl",
+		"UserSets",
+		"AutoFunctions",
+		"AutoFunctionAOIs",
+		"ColorOverexposureCompensation",
+		"Shading",
+		"UserDefinedValues",
+		"FeatureSets",
+		"RemoveParamLimits",
+		"ExpertFeatureAccess",
+		"ChunkDataStreams",
+		"ChunkData",
+		"EventsGeneration",
+		"ExposureEndEventData",
+		"LineStartOvertriggerEventData",
+		"FrameStartOvertriggerEventData",
+		"FrameStartEventData",
+		"AcquisitionStartEventData",
+		"AcquisitionStartOvertriggerEventData",
+		"FrameTimeoutEventData",
+		"EventOverrunEventData",
+		"CriticalTemperatureEventData",
+		"OverTemperatureEventData",
+		"Line1RisingEdgeEventData",
+		"Line2RisingEdgeEventData",
+		"Line3RisingEdgeEventData",
+		"Line4RisingEdgeEventData",
+		"VirtualLine1RisingEdgeEventData",
+		"VirtualLine2RisingEdgeEventData",
+		"VirtualLine3RisingEdgeEventData",
+		"VirtualLine4RisingEdgeEventData",
+		"FileAccessControl",
 	}
 
 	// SequenceControl - This category includes items that control the sequencer feature

@@ -72,7 +72,13 @@ func TestHardwareTrigger(t *testing.T) {
 
 func TestParamGroup(t *testing.T) {
 	expected := "This category includes items used to conduct file operations"
+	if s := FileAccessControl.Description(); s != expected {
+		t.Fatalf("Expected description '%s' and go '%s'.", expected, s)
+	}
+
+	expected = "FileAccessControl"
 	if s := FileAccessControl.String(); s != expected {
 		t.Fatalf("Expected description '%s' and go '%s'.", expected, s)
 	}
+
 }
