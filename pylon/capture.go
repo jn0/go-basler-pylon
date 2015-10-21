@@ -102,21 +102,33 @@ func (cam *Camera) SetParam(p Param, value interface{}) error {
 
 	switch v := value.(type) {
 	case string:
+		// Multiple types for a string
 		switch p.OriginalType {
 		case OriginalTypeGenApiIEnumerationT:
 			cValue := C.CString(v)
 			defer C.free(unsafe.Pointer(cValue))
 			C.setNodeMapEnumParam(cName, cValue)
+		case OriginalTypeGenApiIString, OriginalTypeGenApiICommand:
+			return fmt.Errorf("Original type %s not implemented.", p.OriginalType)
 		default:
-			return fmt.Errorf("Original type %s of param %s not implemented.", p.OriginalType, p.Name)
+			return fmt.Errorf("Unexpected string for type %s", p.OriginalType)
 		}
+
 	case int64:
+		if p.OriginalType != OriginalTypeGenApiIInteger {
+			return fmt.Errorf("Unexpected int64 for type %s", p.OriginalType)
+		}
 		cValue := C.int(v)
 		C.setNodeMapIntParam(cName, cValue)
 
 	case float64:
+		if p.OriginalType != OriginalTypeGenApiIFloat {
+			return fmt.Errorf("Unexpected float64 for type %s", p.OriginalType)
+		}
+
 		cValue := C.double(v)
 		C.setNodeMapFloatParam(cName, cValue)
+
 	default:
 		return fmt.Errorf("Value type %T of param %s not implemented.", value, p.Name)
 	}

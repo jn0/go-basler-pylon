@@ -30,6 +30,15 @@ func (pl ParamList) ParamGroup(pg ParamGroup) ParamList {
 	return r
 }
 
+func (pl ParamList) ParamByName(n string) *Param {
+	for _, p := range pl {
+		if p.Name == n {
+			return &p
+		}
+	}
+	return nil
+}
+
 const (
 	SequenceControl ParamGroup = iota
 	SequenceControlConfiguration
