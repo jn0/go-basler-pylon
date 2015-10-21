@@ -97,6 +97,11 @@ func (cam *Camera) RetrieveAndSave(batch, timeout int, outputPath string) error 
 }
 
 func (cam *Camera) SetParam(p Param, value interface{}) error {
+	cam.openMutex.Lock()
+	defer cam.openMutex.Unlock()
+	if !C.isOpen() {
+		return fmt.Errorf("Camera is not open.")
+	}
 	cName := C.CString(p.Name)
 	defer C.free(unsafe.Pointer(cName))
 
