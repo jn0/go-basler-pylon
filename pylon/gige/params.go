@@ -2,6 +2,12 @@ package gige
 
 import ".."
 
+// This is not quite idomatic go, problem to solve was getting grouped enum
+// for iterations to the end of displaying on a settings page.
+// It may be better to implement these as methods on a GigeCamaera struct,
+// using reflect to get the listing, not sure how to selectively choose the
+// methods in reflection without using tags.
+
 const (
 
 	// SequenceControl - This category includes items that control the sequencer feature
@@ -499,4 +505,605 @@ const (
 	FileOperationResult   IInteger      = "FileOperationResult"   // GenApi::IInteger || Represents the file operation result.
 	FileSize              IInteger      = "FileSize"              // GenApi::IInteger || Represents the size of the selected file.
 	FileOperationExecute  ICommand      = "FileOperationExecute"  // GenApi::ICommand || Executes the selected operation.
+)
+
+var (
+	SequenceControl = []interface{}{
+		SequenceEnable,
+		SequenceAsyncRestart,
+		SequenceAsyncAdvance,
+		SequenceCurrentSet,
+		SequenceSetTotalNumber,
+		SequenceSetIndex,
+		SequenceSetLoad,
+		SequenceSetStore,
+		SequenceSetExecutions,
+	}
+
+	SequenceControlConfiguration = []interface{}{
+		SequenceAdvanceMode,
+		SequenceControlSelector,
+		SequenceControlSource,
+		SequenceAddressBitSelector,
+		SequenceAddressBitSource,
+	}
+
+	AnalogControls = []interface{}{
+		GainAuto,
+		GainRaw,
+		GainAbs,
+		GainSelector,
+		BlackLevelRaw,
+		BlackLevelAbs,
+		BlackLevelSelector,
+		GammaEnable,
+		GammaSelector,
+		Gamma,
+		DigitalShift,
+		SubstrateVoltage,
+	}
+
+	ImageFormat = []interface{}{
+		PixelFormat,
+		PixelCoding,
+		PixelSize,
+		PixelColorFilter,
+		ProcessedRawEnable,
+		SpatialCorrection,
+		SpatialCorrectionAmount,
+		SpatialCorrectionStartingLine,
+		SensorBitDepth,
+		ReverseX,
+		ReverseY,
+		PixelDynamicRangeMin,
+		PixelDynamicRangeMax,
+		FieldOutputMode,
+		TestImageSelector,
+		SensorDigitizationTaps,
+	}
+
+	DeviceInformation = []interface{}{
+		SensorWidth,
+		SensorHeight,
+		WidthMax,
+		HeightMax,
+		DeviceVendorName,
+		DeviceModelName,
+		DeviceManufacturerInfo,
+		DeviceVersion,
+		DeviceFirmwareVersion,
+		DeviceID,
+		DeviceUserID,
+		DeviceReset,
+		DeviceScanType,
+		LastError,
+		ClearLastError,
+		TemperatureSelector,
+		TemperatureAbs,
+		TemperatureState,
+		CriticalTemperature,
+		OverTemperature,
+	}
+
+	ColorImprovementsControl = []interface{}{
+		ColorTransformationSelector,
+		LightSourceSelector,
+		ColorTransformationMatrixFactor,
+		ColorTransformationMatrixFactorRaw,
+		ColorTransformationValueSelector,
+		ColorTransformationValue,
+		ColorTransformationValueRaw,
+		ColorAdjustmentEnable,
+		ColorAdjustmentReset,
+		ColorAdjustmentSelector,
+		ColorAdjustmentHue,
+		ColorAdjustmentHueRaw,
+		ColorAdjustmentSaturation,
+		ColorAdjustmentSaturationRaw,
+		BalanceWhiteReset,
+		BalanceWhiteAuto,
+		BalanceRatioSelector,
+		BalanceRatioAbs,
+		BalanceRatioRaw,
+	}
+
+	AOI = []interface{}{
+		Width,
+		Height,
+		OffsetX,
+		OffsetY,
+		CenterX,
+		CenterY,
+		BinningModeVertical,
+		BinningModeHorizontal,
+		BinningVertical,
+		BinningHorizontal,
+		LegacyBinningVertical,
+		DecimationVertical,
+		DecimationHorizontal,
+	}
+
+	StackedZoneImaging = []interface{}{
+		StackedZoneImagingEnable,
+		StackedZoneImagingIndex,
+		StackedZoneImagingZoneEnable,
+		StackedZoneImagingZoneOffsetY,
+		StackedZoneImagingZoneHeight,
+	}
+
+	AcquisitionTrigger = []interface{}{
+		EnableBurstAcquisition,
+		AcquisitionMode,
+		AcquisitionStart,
+		AcquisitionStop,
+		AcquisitionAbort,
+		AcquisitionFrameCount,
+		TriggerControlImplementation,
+		TriggerSelector,
+		TriggerMode,
+		TriggerSoftware,
+		TriggerSource,
+		TriggerActivation,
+		TriggerPartialClosingFrame,
+		TriggerDelayAbs,
+		TriggerDelaySource,
+		TriggerDelayLineTriggerCount,
+		ExposureStartDelayRaw,
+		ExposureStartDelayAbs,
+		ExposureAuto,
+		ExposureTimeRaw,
+		ExposureTimeAbs,
+		ExposureTimeBaseAbs,
+		ExposureTimeBaseAbsEnable,
+		AcquisitionLineRateAbs,
+		ResultingLinePeriodAbs,
+		ResultingLineRateAbs,
+		AcquisitionFrameRateAbs,
+		AcquisitionFrameRateEnable,
+		ResultingFramePeriodAbs,
+		ResultingFrameRateAbs,
+		ExposureMode,
+		GlobalResetReleaseModeEnable,
+		ShutterMode,
+		ExposureOverlapTimeMaxRaw,
+		InterlacedIntegrationMode,
+		ExposureOverlapTimeMaxAbs,
+		ReadoutTimeAbs,
+		AcquisitionStatusSelector,
+		AcquisitionStatus,
+		FrameTimeoutEnable,
+		FrameTimeoutAbs,
+	}
+
+	DigitalIO = []interface{}{
+		LineSelector,
+		LineInverter,
+		LineTermination,
+		LineDebouncerTimeRaw,
+		LineDebouncerTimeAbs,
+		MinOutPulseWidthRaw,
+		MinOutPulseWidthAbs,
+		LineStatus,
+		LineStatusAll,
+		UserOutputValue,
+		UserOutputValueAll,
+		UserOutputValueAllMask,
+		SyncUserOutputValue,
+		SyncUserOutputValueAll,
+		LineMode,
+		LineSource,
+		LineLogic,
+		LineFormat,
+		UserOutputSelector,
+		SyncUserOutputSelector,
+	}
+
+	VirtualInput = []interface{}{
+		VInpSignalSource,
+		VInpBitLength,
+		VInpSamplingPoint,
+		VInpSignalReadoutActivation,
+	}
+
+	ShaftEncoderModule = []interface{}{
+		ShaftEncoderModuleLineSelector,
+		ShaftEncoderModuleLineSource,
+		ShaftEncoderModuleMode,
+		ShaftEncoderModuleCounterMode,
+		ShaftEncoderModuleCounter,
+		ShaftEncoderModuleCounterMax,
+		ShaftEncoderModuleCounterReset,
+		ShaftEncoderModuleReverseCounterMax,
+		ShaftEncoderModuleReverseCounterReset,
+	}
+
+	FrequencyConverter = []interface{}{
+		FrequencyConverterInputSource,
+		FrequencyConverterSignalAlignment,
+		FrequencyConverterPreDivider,
+		FrequencyConverterMultiplier,
+		FrequencyConverterPostDivider,
+		FrequencyConverterPreventOvertrigger,
+	}
+
+	TimerControls = []interface{}{
+		TimerDurationTimebaseAbs,
+		TimerDelayTimebaseAbs,
+		TimerSelector,
+		TimerDurationAbs,
+		TimerDurationRaw,
+		TimerDelayAbs,
+		TimerDelayRaw,
+		TimerTriggerSource,
+		TimerTriggerActivation,
+		CounterSelector,
+		CounterEventSource,
+		CounterResetSource,
+		CounterReset,
+	}
+
+	TimerSequence = []interface{}{
+		TimerSequenceEnable,
+		TimerSequenceLastEntryIndex,
+		TimerSequenceCurrentEntryIndex,
+		TimerSequenceEntrySelector,
+		TimerSequenceTimerSelector,
+		TimerSequenceTimerEnable,
+		TimerSequenceTimerInverter,
+		TimerSequenceTimerDelayRaw,
+		TimerSequenceTimerDurationRaw,
+	}
+
+	LUTControls = []interface{}{
+		LUTEnable,
+		LUTIndex,
+		LUTValue,
+		LUTValueAll,
+		LUTSelector,
+	}
+
+	TransportLayer = []interface{}{
+		PixelFormatLegacy,
+		PayloadSize,
+		GevInterfaceSelector,
+		GevVersionMajor,
+		GevVersionMinor,
+		GevDeviceModeIsBigEndian,
+		GevDeviceModeCharacterSet,
+		GevMACAddress,
+		GevSupportedIPConfigurationLLA,
+		GevSupportedIPConfigurationDHCP,
+		GevSupportedIPConfigurationPersistentIP,
+		GevCurrentIPConfiguration,
+		GevCurrentIPAddress,
+		GevCurrentSubnetMask,
+		GevCurrentDefaultGateway,
+		GevPersistentIPAddress,
+		GevPersistentSubnetMask,
+		GevPersistentDefaultGateway,
+		GevLinkSpeed,
+		GevLinkMaster,
+		GevLinkFullDuplex,
+		GevLinkCrossover,
+		GevFirstURL,
+		GevSecondURL,
+		GevNumberOfInterfaces,
+		GevMessageChannelCount,
+		GevStreamChannelCount,
+		GevSupportedOptionalCommandsEVENTDATA,
+		GevSupportedOptionalCommandsEVENT,
+		GevSupportedOptionalCommandsPACKETRESEND,
+		GevSupportedOptionalCommandsWRITEMEM,
+		GevSupportedOptionalCommandsConcatenation,
+		GevHeartbeatTimeout,
+		GevTimestampTickFrequency,
+		GevTimestampControlReset,
+		GevTimestampControlLatch,
+		GevTimestampControlLatchReset,
+		GevTimestampValue,
+		GevCCP,
+		GevStreamChannelSelector,
+		GevSCPInterfaceIndex,
+		GevSCPHostPort,
+		GevSCPSFireTestPacket,
+		GevSCPSDoNotFragment,
+		GevSCPSBigEndian,
+		GevSCPSPacketSize,
+		GevSCDA,
+		GevSCPD,
+		GevSCFTD,
+		GevSCBWR,
+		GevSCBWRA,
+		GevSCBWA,
+		GevSCDMT,
+		GevSCDCT,
+		GevSCFJM,
+		TLParamsLocked,
+	}
+
+	ActionControl = []interface{}{
+		ActionSelector,
+		ActionDeviceKey,
+		ActionCommandCount,
+		ActionGroupKey,
+		ActionGroupMask,
+	}
+
+	DeviceControl = []interface{}{
+		DeviceRegistersStreamingStart,
+		DeviceRegistersStreamingEnd,
+	}
+
+	UserSets = []interface{}{
+		UserSetLoad,
+		UserSetSave,
+		UserSetSelector,
+		UserSetDefaultSelector,
+		DefaultSetSelector,
+	}
+
+	AutoFunctions = []interface{}{
+		AutoTargetValue,
+		GrayValueAdjustmentDampingAbs,
+		GrayValueAdjustmentDampingRaw,
+		BalanceWhiteAdjustmentDampingAbs,
+		BalanceWhiteAdjustmentDampingRaw,
+		AutoGainRawLowerLimit,
+		AutoGainRawUpperLimit,
+		AutoExposureTimeAbsLowerLimit,
+		AutoExposureTimeAbsUpperLimit,
+		AutoFunctionProfile,
+	}
+
+	AutoFunctionAOIs = []interface{}{
+		AutoFunctionAOIWidth,
+		AutoFunctionAOIHeight,
+		AutoFunctionAOIOffsetX,
+		AutoFunctionAOIOffsetY,
+		AutoFunctionAOIUsageIntensity,
+		AutoFunctionAOIUsageWhiteBalance,
+		AutoFunctionAOIUsageRedLightCorrection,
+		AutoFunctionAOISelector,
+	}
+
+	ColorOverexposureCompensation = []interface{}{
+		ColorOverexposureCompensationAOISelector,
+		ColorOverexposureCompensationAOIEnable,
+		ColorOverexposureCompensationAOIFactor,
+		ColorOverexposureCompensationAOIFactorRaw,
+		ColorOverexposureCompensationAOIWidth,
+		ColorOverexposureCompensationAOIHeight,
+		ColorOverexposureCompensationAOIOffsetX,
+		ColorOverexposureCompensationAOIOffsetY,
+	}
+
+	Shading = []interface{}{
+		ShadingSelector,
+		ShadingEnable,
+		ShadingStatus,
+		ShadingSetDefaultSelector,
+		ShadingSetSelector,
+		ShadingSetActivate,
+		ShadingSetCreate,
+	}
+
+	UserDefinedValues = []interface{}{
+		UserDefinedValueSelector,
+		UserDefinedValue,
+	}
+
+	FeatureSets = []interface{}{
+		GenicamXmlFileDefault,
+		FeatureSet,
+	}
+
+	RemoveParamLimits = []interface{}{
+		RemoveLimits,
+		ParameterSelector,
+		Prelines,
+	}
+
+	ExpertFeatureAccess = []interface{}{
+		ExpertFeatureAccessSelector,
+		ExpertFeatureAccessKey,
+		ExpertFeatureEnable,
+	}
+
+	ChunkDataStreams = []interface{}{
+		ChunkModeActive,
+		ChunkEnable,
+		ChunkSelector,
+	}
+
+	ChunkData = []interface{}{
+		ChunkStride,
+		ChunkSequenceSetIndex,
+		ChunkOffsetX,
+		ChunkOffsetY,
+		ChunkWidth,
+		ChunkHeight,
+		ChunkDynamicRangeMin,
+		ChunkDynamicRangeMax,
+		ChunkPixelFormat,
+		ChunkTimestamp,
+		ChunkFramecounter,
+		ChunkLineStatusAll,
+		ChunkVirtLineStatusAll,
+		ChunkTriggerinputcounter,
+		ChunkLineTriggerIgnoredCounter,
+		ChunkFrameTriggerIgnoredCounter,
+		ChunkLineTriggerEndToEndCounter,
+		ChunkFrameTriggerCounter,
+		ChunkFramesPerTriggerCounter,
+		ChunkInputStatusAtLineTriggerBitsPerLine,
+		ChunkInputStatusAtLineTriggerIndex,
+		ChunkInputStatusAtLineTriggerValue,
+		ChunkShaftEncoderCounter,
+		ChunkPayloadCRC16,
+		ChunkExposureTime,
+		ChunkGainAll,
+	}
+
+	EventsGeneration = []interface{}{
+		EventSelector,
+		EventNotification,
+	}
+
+	ExposureEndEventData = []interface{}{
+		ExposureEndEventStreamChannelIndex,
+		ExposureEndEventFrameID,
+		ExposureEndEventTimestamp,
+	}
+
+	LineStartOvertriggerEventData = []interface{}{
+		LineStartOvertriggerEventStreamChannelIndex,
+		LineStartOvertriggerEventTimestamp,
+	}
+
+	FrameStartOvertriggerEventData = []interface{}{
+		FrameStartOvertriggerEventStreamChannelIndex,
+		FrameStartOvertriggerEventTimestamp,
+	}
+
+	FrameStartEventData = []interface{}{
+		FrameStartEventStreamChannelIndex,
+		FrameStartEventTimestamp,
+	}
+
+	AcquisitionStartEventData = []interface{}{
+		AcquisitionStartEventStreamChannelIndex,
+		AcquisitionStartEventTimestamp,
+	}
+
+	AcquisitionStartOvertriggerEventData = []interface{}{
+		AcquisitionStartOvertriggerEventStreamChannelIndex,
+		AcquisitionStartOvertriggerEventTimestamp,
+	}
+
+	FrameTimeoutEventData = []interface{}{
+		FrameTimeoutEventStreamChannelIndex,
+		FrameTimeoutEventTimestamp,
+	}
+
+	EventOverrunEventData = []interface{}{
+		EventOverrunEventStreamChannelIndex,
+		EventOverrunEventFrameID,
+		EventOverrunEventTimestamp,
+	}
+
+	CriticalTemperatureEventData = []interface{}{
+		CriticalTemperatureEventStreamChannelIndex,
+		CriticalTemperatureEventTimestamp,
+	}
+
+	OverTemperatureEventData = []interface{}{
+		OverTemperatureEventStreamChannelIndex,
+		OverTemperatureEventTimestamp,
+	}
+
+	Line1RisingEdgeEventData = []interface{}{
+		Line1RisingEdgeEventStreamChannelIndex,
+		Line1RisingEdgeEventTimestamp,
+	}
+
+	Line2RisingEdgeEventData = []interface{}{
+		Line2RisingEdgeEventStreamChannelIndex,
+		Line2RisingEdgeEventTimestamp,
+	}
+
+	Line3RisingEdgeEventData = []interface{}{
+		Line3RisingEdgeEventStreamChannelIndex,
+		Line3RisingEdgeEventTimestamp,
+	}
+
+	Line4RisingEdgeEventData = []interface{}{
+		Line4RisingEdgeEventStreamChannelIndex,
+		Line4RisingEdgeEventTimestamp,
+	}
+
+	VirtualLine1RisingEdgeEventData = []interface{}{
+		VirtualLine1RisingEdgeEventStreamChannelIndex,
+		VirtualLine1RisingEdgeEventTimestamp,
+	}
+
+	VirtualLine2RisingEdgeEventData = []interface{}{
+		VirtualLine2RisingEdgeEventStreamChannelIndex,
+		VirtualLine2RisingEdgeEventTimestamp,
+	}
+
+	VirtualLine3RisingEdgeEventData = []interface{}{
+		VirtualLine3RisingEdgeEventStreamChannelIndex,
+		VirtualLine3RisingEdgeEventTimestamp,
+	}
+
+	VirtualLine4RisingEdgeEventData = []interface{}{
+		VirtualLine4RisingEdgeEventStreamChannelIndex,
+		VirtualLine4RisingEdgeEventTimestamp,
+	}
+
+	FileAccessControl = []interface{}{
+		FileSelector,
+		FileOperationSelector,
+		FileOpenMode,
+		FileAccessBuffer,
+		FileAccessOffset,
+		FileAccessLength,
+		FileOperationStatus,
+		FileOperationResult,
+		FileSize,
+		FileOperationExecute,
+	}
+
+	ParamGroups = [][]interface{}{
+		SequenceControl,
+		SequenceControlConfiguration,
+		AnalogControls,
+		ImageFormat,
+		DeviceInformation,
+		ColorImprovementsControl,
+		AOI,
+		StackedZoneImaging,
+		AcquisitionTrigger,
+		DigitalIO,
+		VirtualInput,
+		ShaftEncoderModule,
+		FrequencyConverter,
+		TimerControls,
+		TimerSequence,
+		LUTControls,
+		TransportLayer,
+		ActionControl,
+		DeviceControl,
+		UserSets,
+		AutoFunctions,
+		AutoFunctionAOIs,
+		ColorOverexposureCompensation,
+		Shading,
+		UserDefinedValues,
+		FeatureSets,
+		RemoveParamLimits,
+		ExpertFeatureAccess,
+		ChunkDataStreams,
+		ChunkData,
+		EventsGeneration,
+		ExposureEndEventData,
+		LineStartOvertriggerEventData,
+		FrameStartOvertriggerEventData,
+		FrameStartEventData,
+		AcquisitionStartEventData,
+		AcquisitionStartOvertriggerEventData,
+		FrameTimeoutEventData,
+		EventOverrunEventData,
+		CriticalTemperatureEventData,
+		OverTemperatureEventData,
+		Line1RisingEdgeEventData,
+		Line2RisingEdgeEventData,
+		Line3RisingEdgeEventData,
+		Line4RisingEdgeEventData,
+		VirtualLine1RisingEdgeEventData,
+		VirtualLine2RisingEdgeEventData,
+		VirtualLine3RisingEdgeEventData,
+		VirtualLine4RisingEdgeEventData,
+		FileAccessControl,
+	}
 )
