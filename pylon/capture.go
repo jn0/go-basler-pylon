@@ -96,39 +96,29 @@ func (cam *Camera) RetrieveAndSave(batch, timeout int, outputPath string) error 
 	return nil
 }
 
-func (cam *Camera) setNodeMapEnum(name IEnumerationT, value interface{}) error {
-	cName := C.CString(string(name))
+func (cam *Camera) SetParam(p Param, value interface{}) error {
+	cName := C.CString(p.Name)
 	defer C.free(unsafe.Pointer(cName))
-	if v, ok := value.(string); !ok {
-		return fmt.Errorf("Expected string value, got %T", value)
-	} else {
-		cValue := C.CString(v)
-		defer C.free(unsafe.Pointer(cValue))
-		C.setNodeMapEnumParam(cName, cValue)
-	}
-	return nil
-}
 
-func (cam *Camera) setNodeMapFloat(name IFloat, value interface{}) error {
-	cName := C.CString(string(name))
-	defer C.free(unsafe.Pointer(cName))
-	if v, ok := value.(float64); !ok {
-		return fmt.Errorf("Expected float64 value, got %T", value)
-	} else {
-		cValue := C.double(v)
-		C.setNodeMapFloatParam(cName, cValue)
-	}
-	return nil
-}
-
-func (cam *Camera) setNodeMapInt(name IInteger, value interface{}) error {
-	cName := C.CString(string(name))
-	defer C.free(unsafe.Pointer(cName))
-	if v, ok := value.(int); !ok {
-		return fmt.Errorf("Expected int value, got %T", value)
-	} else {
+	switch v := value.(type) {
+	case string:
+		switch p.OriginalType {
+		case OriginalTypeGenApiIEnumerationT:
+			cValue := C.CString(v)
+			defer C.free(unsafe.Pointer(cValue))
+			C.setNodeMapEnumParam(cName, cValue)
+		default:
+			return fmt.Errorf("Original type %s of param %s not implemented.", p.OriginalType, p.Name)
+		}
+	case int64:
 		cValue := C.int(v)
 		C.setNodeMapIntParam(cName, cValue)
+
+	case float64:
+		cValue := C.double(v)
+		C.setNodeMapFloatParam(cName, cValue)
+	default:
+		return fmt.Errorf("Value type %T of param %s not implemented.", value, p.Name)
 	}
 	return nil
 }

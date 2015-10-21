@@ -69,3 +69,10 @@ func TestHardwareTrigger(t *testing.T) {
 		t.Fatalf("Expected timeout.")
 	}
 }
+
+func TestParamGroup(t *testing.T) {
+	expected := "This category includes items used to conduct file operations"
+	if s := FileAccessControl.String(); s != expected {
+		t.Fatalf("Expected description '%s' and go '%s'.", expected, s)
+	}
+}
