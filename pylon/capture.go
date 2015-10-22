@@ -72,6 +72,13 @@ func (cam *Camera) ConfigureCamera() error {
 	if !C.isOpen() {
 		return fmt.Errorf("Camera is not open.")
 	}
+
+	cam.startMutex.Lock()
+	defer cam.startMutex.Unlock()
+	if C.isCameraGrabbing() {
+		return fmt.Errorf("Camera is grabbing.")
+	}
+
 	C.configureCamera()
 	return nil
 }
@@ -82,6 +89,13 @@ func (cam *Camera) SetHardwareTriggerConfiguration() error {
 	if !C.isOpen() {
 		return fmt.Errorf("Camera is not open.")
 	}
+
+	cam.startMutex.Lock()
+	defer cam.startMutex.Unlock()
+	if C.isCameraGrabbing() {
+		return fmt.Errorf("Camera is grabbing.")
+	}
+
 	C.setHardwareTriggerConfiguration()
 	return nil
 }
@@ -102,6 +116,13 @@ func (cam *Camera) SetParam(p Param, value interface{}) error {
 	if !C.isOpen() {
 		return fmt.Errorf("Camera is not open.")
 	}
+
+	cam.startMutex.Lock()
+	defer cam.startMutex.Unlock()
+	if C.isCameraGrabbing() {
+		return fmt.Errorf("Camera is grabbing.")
+	}
+
 	cName := C.CString(p.Name)
 	defer C.free(unsafe.Pointer(cName))
 
