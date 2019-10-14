@@ -1,6 +1,16 @@
 // Include files to use the PYLON API.
 #include <pylon/PylonIncludes.h>
+
+#ifdef GIGE
 #include <pylon/gige/BaslerGigEInstantCamera.h>
+#define Basler_XCamera Basler_GigECamera
+#define CBaslerXCamera Pylon::CBaslerGigEInstantCamera
+#else
+#include <pylon/usb/PylonUsbIncludes.h>
+#define Basler_XCamera Basler_UsbCameraParams
+#define CBaslerXCamera Pylon::CBaslerUsbInstantCamera
+#endif
+#include <capture.h>
 
 class CameraWrapper {
     public:
@@ -29,7 +39,7 @@ class CameraWrapper {
         CameraWrapper(CameraWrapper const&);              // Don't Implement.
         void operator=(CameraWrapper const&); // Don't implement
 
-        Pylon::CBaslerGigEInstantCamera camera;
+        CBaslerXCamera camera;
         Pylon::PylonAutoInitTerm autoInitTerm;
 };
 
@@ -177,11 +187,16 @@ std::string CameraWrapper::startCapture() {
 }
 
 void CameraWrapper::configureCamera() {
-    this->camera.GainAuto.SetValue(Basler_GigECamera::GainAuto_Continuous);
+    this->camera.GainAuto.SetValue(Basler_XCamera::GainAuto_Continuous);
+#ifdef GIGE
     this->camera.GainRaw.SetValue(1);
     this->camera.BlackLevelRaw.SetValue(90);
+#else
+    this->camera.Gain.SetValue(1.0);
+    this->camera.BlackLevel.SetValue(90.0);
+#endif
     this->camera.DigitalShift.SetValue(1);
-    this->camera.ExposureAuto.SetValue(Basler_GigECamera::ExposureAuto_Continuous);
+    this->camera.ExposureAuto.SetValue(Basler_XCamera::ExposureAuto_Continuous);
 }
 
 void CameraWrapper::setNodeMapIntParam(const GenICam::gcstring name, int64_t value) {
