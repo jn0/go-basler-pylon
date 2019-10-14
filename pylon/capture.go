@@ -21,6 +21,9 @@ type Camera struct {
 }
 
 func (cam *Camera) Info() *CameraInfo {
+	if !C.isAttached() {
+		return nil
+	}
 	var i *CameraInfo = new(CameraInfo)
 	i.FullName = C.GoString(C.fullName())
 	i.VendorName = C.GoString(C.vendorName())
@@ -94,7 +97,10 @@ func (cam *Camera) ConfigureCamera() error {
 		return fmt.Errorf("Camera is grabbing.")
 	}
 
-	C.configureCamera()
+	msg := C.configureCamera()
+	if errMsg := C.GoString(msg); errMsg != "" {
+		return fmt.Errorf(errMsg)
+	}
 	return nil
 }
 
