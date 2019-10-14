@@ -10,7 +10,7 @@ extern "C" {
 // prototypes
 void stopCapture();
 void attachDevice();
-void configureCamera();
+const char* configureCamera();
 const char* retrieveAndSave(int batch, int timeout, char* outputPath);
 const char* startCapture();
 void openCamera();

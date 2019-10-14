@@ -28,7 +28,7 @@ class CameraWrapper {
         bool isOpen();
         std::string retrieveAndSave(int, int, std::string);
         std::string startCapture();
-        void configureCamera();
+        std::string configureCamera();
         void setHardwareTriggerConfiguration();
         void setNodeMapIntParam(const GenICam::gcstring,int64_t);
         void setNodeMapFloatParam(const GenICam::gcstring, double);
@@ -51,8 +51,8 @@ void attachDevice() {
     CameraWrapper::getInstance().attachDevice();
 }
 
-void configureCamera() {
-    CameraWrapper::getInstance().configureCamera();
+const char* configureCamera() {
+    return CameraWrapper::getInstance().configureCamera().c_str();
 }
 
 void setHardwareTriggerConfiguration() {
@@ -186,17 +186,49 @@ std::string CameraWrapper::startCapture() {
     return "";
 }
 
-void CameraWrapper::configureCamera() {
-    this->camera.GainAuto.SetValue(Basler_XCamera::GainAuto_Continuous);
+std::string CameraWrapper::configureCamera() {
+    std::string msg = "";
+    try {
+        this->camera.GainAuto.SetValue(Basler_XCamera::GainAuto_Continuous);
+    } catch (GenICam::GenericException &e) {
+        msg = "GainAuto.Set: "; msg += e.GetDescription();
+	std::cerr << msg << std::endl;
+	return msg;
+    }
 #ifdef GIGE
     this->camera.GainRaw.SetValue(1);
     this->camera.BlackLevelRaw.SetValue(90);
 #else
-    this->camera.Gain.SetValue(1.0);
-    this->camera.BlackLevel.SetValue(90.0);
+    try {
+        this->camera.Gain.SetValue(this->camera.Gain.GetMin());
+    } catch (GenICam::GenericException &e) {
+        msg = "Gain.Set: "; msg += e.GetDescription();
+	std::cerr << msg << std::endl;
+	return msg;
+    }
+    try {
+        this->camera.BlackLevel.SetValue(90.0);
+    } catch (GenICam::GenericException &e) {
+        msg = "BlackLevel.Set: "; msg += e.GetDescription();
+	std::cerr << msg << std::endl;
+	return msg;
+    }
 #endif
-    this->camera.DigitalShift.SetValue(1);
-    this->camera.ExposureAuto.SetValue(Basler_XCamera::ExposureAuto_Continuous);
+    try {
+        this->camera.DigitalShift.SetValue(1);
+    } catch (GenICam::GenericException &e) {
+        msg = "DigitalShift.Set: "; msg += e.GetDescription();
+	std::cerr << msg << std::endl;
+	return msg;
+    }
+    try {
+        this->camera.ExposureAuto.SetValue(Basler_XCamera::ExposureAuto_Continuous);
+    } catch (GenICam::GenericException &e) {
+        msg = "ExposureAuto.Set: "; msg += e.GetDescription();
+	std::cerr << msg << std::endl;
+	return msg;
+    }
+    return "";
 }
 
 void CameraWrapper::setNodeMapIntParam(const GenICam::gcstring name, int64_t value) {
