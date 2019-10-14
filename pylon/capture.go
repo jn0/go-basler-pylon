@@ -11,8 +11,23 @@ import (
 	"unsafe"
 )
 
+type CameraInfo struct {
+	FullName, VendorName, ModelName string
+	Width, Height int
+}
+
 type Camera struct {
 	startMutex, attachedMutex, openMutex sync.Mutex
+}
+
+func (cam *Camera) Info() *CameraInfo {
+	var i *CameraInfo = new(CameraInfo)
+	i.FullName = C.GoString(C.fullName())
+	i.VendorName = C.GoString(C.vendorName())
+	i.ModelName = C.GoString(C.modelName())
+	i.Width = int(C.width())
+	i.Height = int(C.height())
+	return i
 }
 
 func (cam *Camera) OpenCamera() {
@@ -31,11 +46,11 @@ func (cam *Camera) CloseCamera() {
 	}
 }
 
-func (cam *Camera) StartCapture() error {
+func (cam *Camera) StartCapture(max int) error {
 	cam.startMutex.Lock()
 	defer cam.startMutex.Unlock()
 	if !C.isCameraGrabbing() {
-		s := C.startCapture()
+		s := C.startCapture(C.int(max))
 		if errMsg := C.GoString(s); errMsg != "" {
 			return fmt.Errorf(errMsg)
 		}

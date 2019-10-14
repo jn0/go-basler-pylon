@@ -8,20 +8,25 @@ extern "C" {
 #endif
 
 // prototypes
-void stopCapture();
-void attachDevice();
+const char* stopCapture();
+const char* attachDevice();
 const char* configureCamera();
 const char* retrieveAndSave(int batch, int timeout, char* outputPath);
-const char* startCapture();
-void openCamera();
-void closeCamera();
+const char* startCapture(int max);
+const char* openCamera();
+const char* closeCamera();
 bool isCameraGrabbing();
 bool isAttached();
 bool isOpen();
-void setHardwareTriggerConfiguration();
-void setNodeMapIntParam(char* name, int value);
-void setNodeMapFloatParam(char* name, double value);
-void setNodeMapEnumParam(char* name, char* value);
+const char* setHardwareTriggerConfiguration();
+const char* setNodeMapIntParam(char* name, int value);
+const char* setNodeMapFloatParam(char* name, double value);
+const char* setNodeMapEnumParam(char* name, char* value);
+const char* fullName();
+const char* vendorName();
+const char* modelName();
+int width();
+int height();
 
 #ifdef __cplusplus
 }

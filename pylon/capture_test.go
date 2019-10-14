@@ -20,7 +20,11 @@ func TestStart(t *testing.T) {
 	defer cam.CloseCamera()
 	cam.ConfigureCamera()
 
-	if e := cam.StartCapture(); e != nil {
+	i := cam.Info()
+	t.Logf("camera is %d×%d (%s by %s) [%s]",
+		i.Width, i.Height, i.ModelName, i.VendorName, i.FullName)
+
+	if e := cam.StartCapture(500); e != nil {
 		t.Fatal(e)
 	}
 	defer cam.StopCapture()
@@ -60,7 +64,11 @@ func TestHardwareTrigger(t *testing.T) {
 		t.Fatal(e)
 	}
 
-	if e := cam.StartCapture(); e != nil {
+	i := cam.Info()
+	t.Logf("camera is %d×%d (%s by %s) [%s]",
+		i.Width, i.Height, i.ModelName, i.VendorName, i.FullName)
+
+	if e := cam.StartCapture(500); e != nil {
 		t.Fatal(e)
 	}
 	defer cam.StopCapture()
