@@ -1,6 +1,6 @@
 # go-basler-pylon
 
-A minimal set of calls on top of the Basler Pylon4 C++ SDK for linux.
+A minimal set of calls on top of the Basler Pylon5 C++ SDK for linux.
 
 Changes to [the original](https://github.com/japettyjohn/go-basler-pylon):
     - Updated to comply with Pylon-5
