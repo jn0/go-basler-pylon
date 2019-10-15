@@ -12,8 +12,8 @@ import (
 )
 
 type CameraInfo struct {
-	FullName, VendorName, ModelName string
-	Width, Height int
+	FullName, VendorName, ModelName, SerialNumber, DeviceVersion string
+	ProductId, VendorId, Width, Height int
 }
 
 type Camera struct {
@@ -25,11 +25,15 @@ func (cam *Camera) Info() *CameraInfo {
 		return nil
 	}
 	var i *CameraInfo = new(CameraInfo)
+	i.Width = int(C.width())
+	i.Height = int(C.height())
 	i.FullName = C.GoString(C.fullName())
 	i.VendorName = C.GoString(C.vendorName())
 	i.ModelName = C.GoString(C.modelName())
-	i.Width = int(C.width())
-	i.Height = int(C.height())
+	i.SerialNumber = C.GoString(C.serialNumber())
+	i.DeviceVersion = C.GoString(C.deviceVersion())
+	i.ProductId = int(C.productId())
+	i.VendorId = int(C.vendorId())
 	return i
 }
 
@@ -156,28 +160,33 @@ func (cam *Camera) SetParam(p Param, value interface{}) error {
 			defer C.free(unsafe.Pointer(cValue))
 			C.setNodeMapEnumParam(cName, cValue)
 		case OriginalTypeGenApiIString, OriginalTypeGenApiICommand:
-			return fmt.Errorf("Original type %s not implemented.", p.OriginalType)
+			return fmt.Errorf("Original type %s not implemented.",
+					  p.OriginalType)
 		default:
-			return fmt.Errorf("Unexpected string for type %s", p.OriginalType)
+			return fmt.Errorf("Unexpected string for type %s",
+					  p.OriginalType)
 		}
 
 	case int64:
 		if p.OriginalType != OriginalTypeGenApiIInteger {
-			return fmt.Errorf("Unexpected int64 for type %s", p.OriginalType)
+			return fmt.Errorf("Unexpected int64 for type %s",
+					  p.OriginalType)
 		}
 		cValue := C.int(v)
 		C.setNodeMapIntParam(cName, cValue)
 
 	case float64:
 		if p.OriginalType != OriginalTypeGenApiIFloat {
-			return fmt.Errorf("Unexpected float64 for type %s", p.OriginalType)
+			return fmt.Errorf("Unexpected float64 for type %s",
+					  p.OriginalType)
 		}
 
 		cValue := C.double(v)
 		C.setNodeMapFloatParam(cName, cValue)
 
 	default:
-		return fmt.Errorf("Value type %T of param %s not implemented.", value, p.Name)
+		return fmt.Errorf("Value type %T of param %s not implemented.",
+				  value, p.Name)
 	}
 	return nil
 }

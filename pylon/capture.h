@@ -22,9 +22,15 @@ const char* setHardwareTriggerConfiguration();
 const char* setNodeMapIntParam(char* name, int value);
 const char* setNodeMapFloatParam(char* name, double value);
 const char* setNodeMapEnumParam(char* name, char* value);
+
 const char* fullName();
 const char* vendorName();
 const char* modelName();
+const char* serialNumber();
+const char* deviceVersion();
+int productId();
+int vendorId();
+
 int width();
 int height();
 

@@ -21,8 +21,10 @@ func TestStart(t *testing.T) {
 	cam.ConfigureCamera()
 
 	i := cam.Info()
-	t.Logf("camera is %d×%d (%s by %s) [%s]",
-		i.Width, i.Height, i.ModelName, i.VendorName, i.FullName)
+	t.Logf("camera USB[%04x:%04x] is %d×%d %#v by %#v, %#v, serial %#v, version %#v",
+		i.VendorId, i.ProductId,
+		i.Width, i.Height, i.ModelName, i.VendorName,
+		i.FullName, i.SerialNumber, i.DeviceVersion)
 
 	if e := cam.StartCapture(500); e != nil {
 		t.Fatal(e)
@@ -65,8 +67,10 @@ func TestHardwareTrigger(t *testing.T) {
 	}
 
 	i := cam.Info()
-	t.Logf("camera is %d×%d (%s by %s) [%s]",
-		i.Width, i.Height, i.ModelName, i.VendorName, i.FullName)
+	t.Logf("camera USB[%04x:%04x] is %d×%d %#v by %#v, %#v, serial %#v, version %#v",
+		i.VendorId, i.ProductId,
+		i.Width, i.Height, i.ModelName, i.VendorName,
+		i.FullName, i.SerialNumber, i.DeviceVersion)
 
 	if e := cam.StartCapture(500); e != nil {
 		t.Fatal(e)

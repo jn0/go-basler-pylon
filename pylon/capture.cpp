@@ -1,3 +1,5 @@
+#include <cstdlib>
+
 // Include files to use the PYLON API.
 #include <pylon/PylonIncludes.h>
 
@@ -10,8 +12,8 @@
 #define Basler_XCamera Basler_UsbCameraParams
 #define CBaslerXCamera Pylon::CBaslerUsbInstantCamera
 #endif
-#include <capture.h>
 #include <pylon/InstantCamera.h>
+#include <capture.h>
 
 class CameraWrapper {
     public:
@@ -35,6 +37,7 @@ class CameraWrapper {
         std::string setNodeMapEnumParam(const GenICam::gcstring,
 					const GenICam::gcstring);
 
+	static const int NoIntValue = -1;
     private:
         CameraWrapper() {}
         CameraWrapper(CameraWrapper const&);  // Don't Implement.
@@ -42,15 +45,22 @@ class CameraWrapper {
 
         CBaslerXCamera camera;
         Pylon::PylonAutoInitTerm autoInitTerm;
-    	int width, height;
+
+    private: // device info & getters
 	Pylon::CInstantCamera::DeviceInfo_t info() { return this->camera.GetDeviceInfo(); }
-	std::string fullName, vendorName, modelName;
+    	int width, height;
+	std::string fullName, vendorName, modelName, serialNumber,
+		    deviceVersion, productId, vendorId;
     public:
 	int Width() { return width; }
 	int Height() { return height; }
 	const char* FullName() { return fullName.c_str(); }
 	const char* VendorName() { return vendorName.c_str(); }
 	const char* ModelName() { return modelName.c_str(); }
+	const char* SerialNumber() { return serialNumber.c_str(); }
+	const char* DeviceVersion() { return deviceVersion.c_str(); }
+	const char* ProductId() { return productId.c_str(); }
+	const char* VendorId() { return vendorId.c_str(); }
 };
 
 /******************************************************************************
@@ -154,6 +164,27 @@ const char* setNodeMapEnumParam(char* name, char* value) {
 const char* fullName() { return CameraWrapper::getInstance().FullName(); }
 const char* vendorName() { return CameraWrapper::getInstance().VendorName(); }
 const char* modelName() { return CameraWrapper::getInstance().ModelName(); }
+const char* serialNumber() { return CameraWrapper::getInstance().SerialNumber(); }
+const char* deviceVersion() { return CameraWrapper::getInstance().DeviceVersion(); }
+
+static inline bool hasNoValue(std::string s) {
+	return strncmp(s.c_str(), "<no ", 4) == 0;
+}
+
+static inline int hex2int(std::string s, int dflt) {
+	char *endp;
+	return hasNoValue(s) ? dflt : (int)strtol(s.c_str(), &endp, 16);
+}
+
+int productId() {
+	return hex2int(CameraWrapper::getInstance().ProductId(),
+			CameraWrapper::NoIntValue);
+}
+int vendorId() {
+	return hex2int(CameraWrapper::getInstance().VendorId(),
+			CameraWrapper::NoIntValue);
+}
+
 int width() { return CameraWrapper::getInstance().Width(); }
 int height() { return CameraWrapper::getInstance().Height(); }
 /*
@@ -182,6 +213,14 @@ std::string CameraWrapper::attachDevice() {
     return "";
 }
 
+#define INFOS(info, name) ((info).Is##name##Available() ? \
+			   (info).Get##name().c_str() : \
+			   ("<no "#name">"))
+
+#define INFOI(info, name, defaultValue) ((info).Is##name##Available() ? \
+					(info).Get##name().GetValue() : \
+					(defaultValue))
+
 std::string CameraWrapper::openCamera() {
     try {
 	this->camera.Open();
@@ -196,15 +235,25 @@ std::string CameraWrapper::openCamera() {
     this->width = width->GetValue();
     this->height = height->GetValue();
 
-    this->fullName.assign(this->info().GetFullName().c_str());
-    this->vendorName.assign(this->info().GetVendorName().c_str());
-    this->modelName.assign(this->info().GetModelName().c_str());
+    Pylon::CInstantCamera::DeviceInfo_t info = this->info();
 
-    std::cerr << "Camera [" << this->Width() << "×" << this->Height() << "]"
-	      << " [" << this->fullName.c_str() << "]"
-	      << " [" << this->vendorName.c_str() << "]"
-	      << " [" << this->modelName.c_str() << "]"
-	      << std::endl;
+    this->fullName.assign(INFOS(info, FullName));
+    this->vendorName.assign(INFOS(info, VendorName));
+    this->modelName.assign(INFOS(info, ModelName));
+    this->serialNumber.assign(INFOS(info, SerialNumber));
+    this->deviceVersion.assign(INFOS(info, DeviceVersion));
+    this->productId.assign(INFOS(info, ProductId));
+    this->vendorId.assign(INFOS(info, VendorId));
+
+    std::cerr << "Camera [" << this->Width() << "×" << this->Height() << "]" << std::endl
+	      << "\tfull=[" << this->fullName.c_str() << "]" << std::endl
+	      << "\tvendor=[" << this->vendorName.c_str() << "]" << std::endl
+	      << "\tmodel=[" << this->modelName.c_str() << "]" << std::endl
+	      << "\tserial=[" << this->serialNumber.c_str() << "]" << std::endl
+	      << "\tversion=[" << this->deviceVersion.c_str() << "]" << std::endl
+	      << "\tprodId=[" << this->productId.c_str() << "]" << std::endl
+	      << "\tvendId=[" << this->vendorId.c_str() << "]" << std::endl
+	      ;
 /*
     Pylon::CPylonUsbCameraT::DeviceInfo_t di = this->camera.GetDeviceInfo();
     std::cerr << "Camera ["
