@@ -8,6 +8,7 @@ extern "C" {
 #endif
 
 // prototypes
+void pylonInitialize();
 const char* stopCapture();
 const char* attachDevice();
 const char* configureCamera();

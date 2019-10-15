@@ -45,6 +45,9 @@ class CameraWrapper {
 
         CBaslerXCamera camera;
         Pylon::PylonAutoInitTerm autoInitTerm;
+	const std::string openState(std::string prefix) {
+		return prefix + (isOpen() ? "open" : "closed");
+	}
 
     private: // device info & getters
 	Pylon::CInstantCamera::DeviceInfo_t info() { return this->camera.GetDeviceInfo(); }
@@ -63,30 +66,44 @@ class CameraWrapper {
 	const char* VendorId() { return vendorId.c_str(); }
 };
 
+static inline bool hasNoValue(std::string s) {
+	return strncmp(s.c_str(), "<no ", 4) == 0;
+}
+
+static inline int hex2int(std::string s, int dflt) {
+	return hasNoValue(s) ? dflt : (int)strtol(s.c_str(), nullptr, 16);
+}
+
+#define CAMERA(op, ...) CameraWrapper::getInstance().op(__VA_ARGS__)
+
 /******************************************************************************
  * EXTERNALLY VISIBLE BEGIN
  */
+void pylonInitialize() {
+	Pylon::PylonInitialize();
+}
+
 const char* stopCapture() {
-    std::string msg = CameraWrapper::getInstance().stopCapture();
+    std::string msg = CAMERA(stopCapture);
     std::cerr << __func__ << "():" << (msg == "" ? "ok" : msg) << std::endl;
     return msg.c_str();
 }
 
 const char* attachDevice() {
-    std::string msg = CameraWrapper::getInstance().attachDevice();
+    std::string msg = CAMERA(attachDevice);
     std::cerr << __func__ << "():" << (msg == "" ? "ok" : msg) << std::endl;
     return msg.c_str();
 }
 
 const char* configureCamera() {
     assert(isOpen());
-    std::string msg = CameraWrapper::getInstance().configureCamera();
+    std::string msg = CAMERA(configureCamera);
     std::cerr << __func__ << "():" << (msg == "" ? "ok" : msg) << std::endl;
     return msg.c_str();
 }
 
 const char* setHardwareTriggerConfiguration() {
-    std::string msg = CameraWrapper::getInstance().setHardwareTriggerConfiguration();
+    std::string msg = CAMERA(setHardwareTriggerConfiguration);
     std::cerr << __func__ << "():" << (msg == "" ? "ok" : msg) << std::endl;
     return msg.c_str();
 }
@@ -94,49 +111,38 @@ const char* setHardwareTriggerConfiguration() {
 const char* retrieveAndSave(int batch, int timeout, char* outputPath) {
     std::string op;
     op.assign(outputPath);
-    std::string msg = CameraWrapper::getInstance().retrieveAndSave(batch,
-								   timeout,
-								   op);
+    std::string msg = CAMERA(retrieveAndSave, batch, timeout, op);
     std::cerr << __func__ << "(" << batch << ", " << timeout << ", " << outputPath << "):"
 	      << (msg == "" ? "ok" : msg) << std::endl;
     return msg.c_str();
 }
 const char* startCapture(int max) {
-    std::string msg = CameraWrapper::getInstance().startCapture(max);
+    std::string msg = CAMERA(startCapture, max);
     std::cerr << __func__ << "():" << (msg == "" ? "ok" : msg) << std::endl;
     return msg.c_str();
 }
 
 const char* openCamera() {
     assert(isAttached());
-    std::string msg = CameraWrapper::getInstance().openCamera();
+    std::string msg = CAMERA(openCamera);
     std::cerr << __func__ << "():" << (msg == "" ? "ok" : msg) << std::endl;
     return msg.c_str();
 }
 
 const char* closeCamera() {
-    std::string msg = CameraWrapper::getInstance().closeCamera();
+    std::string msg = CAMERA(closeCamera);
     std::cerr << __func__ << "():" << (msg == "" ? "ok" : msg) << std::endl;
     return msg.c_str();
 }
 
-bool isCameraGrabbing() {
-    return CameraWrapper::getInstance().isGrabbing();
-}
-
-bool isAttached() {
-    return CameraWrapper::getInstance().isAttached();
-}
-
-bool isOpen() {
-    return CameraWrapper::getInstance().isOpen();
-}
+bool isCameraGrabbing() { return CAMERA(isGrabbing); }
+bool isAttached() { return CAMERA(isAttached); }
+bool isOpen() { return CAMERA(isOpen); }
 
 const char* setNodeMapIntParam(char* name, int value) {
     GenICam::gcstring op;
     op.assign(name);
-    std::string msg = CameraWrapper::getInstance().setNodeMapIntParam(op,
-								      (int64_t)value);
+    std::string msg = CAMERA(setNodeMapIntParam, op, (int64_t)value);
     std::cerr << __func__ << "(" << name << ", " << value << "):"
 	      << (msg == "" ? "ok" : msg) << std::endl;
     return msg.c_str();
@@ -145,7 +151,7 @@ const char* setNodeMapIntParam(char* name, int value) {
 const char* setNodeMapFloatParam(char* name, double value) {
     GenICam::gcstring op;
     op.assign(name);
-    std::string msg = CameraWrapper::getInstance().setNodeMapFloatParam(op, value);
+    std::string msg = CAMERA(setNodeMapFloatParam, op, value);
     std::cerr << __func__ << "(" << name << ", " << value << "):"
 	      << (msg == "" ? "ok" : msg) << std::endl;
     return msg.c_str();
@@ -155,37 +161,27 @@ const char* setNodeMapEnumParam(char* name, char* value) {
     GenICam::gcstring op, v;
     op.assign(name);
     v.assign(value);
-    std::string msg = CameraWrapper::getInstance().setNodeMapEnumParam(op, v);
+    std::string msg = CAMERA(setNodeMapEnumParam, op, v);
     std::cerr << __func__ << "(" << name << ", " << value << "):"
 	      << (msg == "" ? "ok" : msg) << std::endl;
     return msg.c_str();
 }
 
-const char* fullName() { return CameraWrapper::getInstance().FullName(); }
-const char* vendorName() { return CameraWrapper::getInstance().VendorName(); }
-const char* modelName() { return CameraWrapper::getInstance().ModelName(); }
-const char* serialNumber() { return CameraWrapper::getInstance().SerialNumber(); }
-const char* deviceVersion() { return CameraWrapper::getInstance().DeviceVersion(); }
-
-static inline bool hasNoValue(std::string s) {
-	return strncmp(s.c_str(), "<no ", 4) == 0;
-}
-
-static inline int hex2int(std::string s, int dflt) {
-	return hasNoValue(s) ? dflt : (int)strtol(s.c_str(), nullptr, 16);
-}
+const char* fullName() { return CAMERA(FullName); }
+const char* vendorName() { return CAMERA(VendorName); }
+const char* modelName() { return CAMERA(ModelName); }
+const char* serialNumber() { return CAMERA(SerialNumber); }
+const char* deviceVersion() { return CAMERA(DeviceVersion); }
 
 int productId() {
-	return hex2int(CameraWrapper::getInstance().ProductId(),
-			CameraWrapper::NoIntValue);
+	return hex2int(CAMERA(ProductId), CameraWrapper::NoIntValue);
 }
 int vendorId() {
-	return hex2int(CameraWrapper::getInstance().VendorId(),
-			CameraWrapper::NoIntValue);
+	return hex2int(CAMERA(VendorId), CameraWrapper::NoIntValue);
 }
 
-int width() { return CameraWrapper::getInstance().Width(); }
-int height() { return CameraWrapper::getInstance().Height(); }
+int width() { return CAMERA(Width); }
+int height() { return CAMERA(Height); }
 /*
  * EXTERNALLY VISIBLE END
  ******************************************************************************/
@@ -220,6 +216,8 @@ std::string CameraWrapper::attachDevice() {
 					(info).Get##name().GetValue() : \
 					(defaultValue))
 
+#define OUTS(name) "\t"#name"=[" << this->name.c_str() << "]" << std::endl
+
 std::string CameraWrapper::openCamera() {
     try {
 	this->camera.Open();
@@ -245,13 +243,13 @@ std::string CameraWrapper::openCamera() {
     this->vendorId.assign(INFOS(info, VendorId));
 
     std::cerr << "Camera [" << this->Width() << "×" << this->Height() << "]" << std::endl
-	      << "\tfull=[" << this->fullName.c_str() << "]" << std::endl
-	      << "\tvendor=[" << this->vendorName.c_str() << "]" << std::endl
-	      << "\tmodel=[" << this->modelName.c_str() << "]" << std::endl
-	      << "\tserial=[" << this->serialNumber.c_str() << "]" << std::endl
-	      << "\tversion=[" << this->deviceVersion.c_str() << "]" << std::endl
-	      << "\tprodId=[" << this->productId.c_str() << "]" << std::endl
-	      << "\tvendId=[" << this->vendorId.c_str() << "]" << std::endl
+	      << OUTS(fullName)
+	      << OUTS(vendorName)
+	      << OUTS(modelName)
+	      << OUTS(serialNumber)
+	      << OUTS(deviceVersion)
+	      << OUTS(productId)
+	      << OUTS(vendorId)
 	      ;
 /*
     Pylon::CPylonUsbCameraT::DeviceInfo_t di = this->camera.GetDeviceInfo();
@@ -335,10 +333,11 @@ std::string CameraWrapper::retrieveAndSave(int batch,
             result << ptrGrabResult->GetErrorCode()
 	           << " "
 		   << ptrGrabResult->GetErrorDescription();
+	    std::cerr << "grab failed: " << result.str() << std::endl;
             return result.str();
         }
     } catch (GenICam::GenericException &e) {
-        std::string msg = __func__; msg += ": "; msg += e.GetDescription();
+        std::string msg = __func__; msg += " exception: "; msg += e.GetDescription();
 	std::cerr << msg << std::endl;
         return msg;
     }
@@ -375,14 +374,18 @@ std::string CameraWrapper::configureCamera() {
 	return msg;
     }
 #ifdef GIGE
+    msg += "GigE: ";
     this->camera.GainRaw.SetValue(1);
     this->camera.BlackLevelRaw.SetValue(90);
 #else
+    msg += "USB";
+    msg += this->openState(", cam is ");
+    msg += "; ";
+    /*
     try {
         this->camera.Gain.SetValue(this->camera.Gain.GetMin());
     } catch (GenICam::GenericException &e) {
         msg += "Gain.Set: "; msg += e.GetDescription();
-	msg += this->isOpen() ? "; cam is open" : "; cam is closed";
 	std::cerr << msg << std::endl;
 	return msg;
     }
@@ -393,6 +396,7 @@ std::string CameraWrapper::configureCamera() {
 	std::cerr << msg << std::endl;
 	return msg;
     }
+    */
 #endif
     try {
         this->camera.DigitalShift.SetValue(1);
