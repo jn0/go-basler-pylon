@@ -172,8 +172,7 @@ static inline bool hasNoValue(std::string s) {
 }
 
 static inline int hex2int(std::string s, int dflt) {
-	char *endp;
-	return hasNoValue(s) ? dflt : (int)strtol(s.c_str(), &endp, 16);
+	return hasNoValue(s) ? dflt : (int)strtol(s.c_str(), nullptr, 16);
 }
 
 int productId() {
