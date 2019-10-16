@@ -13,6 +13,7 @@ const char* stopCapture();
 const char* attachDevice();
 const char* configureCamera();
 const char* retrieveAndSave(int batch, int timeout, char* outputPath);
+const char* fetch();
 const char* startCapture(int max);
 const char* openCamera();
 const char* closeCamera();

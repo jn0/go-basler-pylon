@@ -25,6 +25,7 @@ func TestStart(t *testing.T) {
 		i.FullName, i.SerialNumber, i.DeviceVersion)
 	}
 
+/*
 	if e := cam.StartCapture(500); e != nil {
 		t.Fatalf("StartCapture failed: %v", e)
 	}
@@ -32,6 +33,10 @@ func TestStart(t *testing.T) {
 
 	if e := cam.RetrieveAndSave(1, 5000, imgPath+"/"); e != nil {
 		t.Fatalf("RetrieveAndSave failed: %+v", e)
+	}
+*/
+	if e := cam.Fetch(); e != nil {
+		t.Fatalf("Fetch failed: %v", e)
 	}
 
 	if f, e := os.Open(imgPath); e != nil {

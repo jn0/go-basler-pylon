@@ -36,6 +36,7 @@ class CameraWrapper {
         std::string setNodeMapFloatParam(const GenICam::gcstring, double);
         std::string setNodeMapEnumParam(const GenICam::gcstring,
 					const GenICam::gcstring);
+	std::string fetch();
 
 	static const int NoIntValue = -1;
     private:
@@ -75,6 +76,9 @@ static inline int hex2int(std::string s, int dflt) {
 }
 
 #define CAMERA(op, ...) CameraWrapper::getInstance().op(__VA_ARGS__)
+#define TRACE(msg, ...) std::cerr << __func__ << "(" #__VA_ARGS__ "):" \
+				  << ((msg) == "" ? "ok" : msg) \
+				  << std::endl
 
 /******************************************************************************
  * EXTERNALLY VISIBLE BEGIN
@@ -84,27 +88,28 @@ void pylonInitialize() {
 }
 
 const char* stopCapture() {
-    std::string msg = CAMERA(stopCapture);
-    std::cerr << __func__ << "():" << (msg == "" ? "ok" : msg) << std::endl;
+    std::string msg = CAMERA(stopCapture); TRACE(msg);
     return msg.c_str();
 }
 
 const char* attachDevice() {
-    std::string msg = CAMERA(attachDevice);
-    std::cerr << __func__ << "():" << (msg == "" ? "ok" : msg) << std::endl;
+    std::string msg = CAMERA(attachDevice); TRACE(msg);
     return msg.c_str();
 }
 
 const char* configureCamera() {
     assert(isOpen());
-    std::string msg = CAMERA(configureCamera);
-    std::cerr << __func__ << "():" << (msg == "" ? "ok" : msg) << std::endl;
+    std::string msg = CAMERA(configureCamera); TRACE(msg);
     return msg.c_str();
 }
 
 const char* setHardwareTriggerConfiguration() {
-    std::string msg = CAMERA(setHardwareTriggerConfiguration);
-    std::cerr << __func__ << "():" << (msg == "" ? "ok" : msg) << std::endl;
+    std::string msg = CAMERA(setHardwareTriggerConfiguration); TRACE(msg);
+    return msg.c_str();
+}
+
+const char* fetch() {
+    std::string msg = CAMERA(fetch); TRACE(msg);
     return msg.c_str();
 }
 
@@ -112,26 +117,22 @@ const char* retrieveAndSave(int batch, int timeout, char* outputPath) {
     std::string op;
     op.assign(outputPath);
     std::string msg = CAMERA(retrieveAndSave, batch, timeout, op);
-    std::cerr << __func__ << "(" << batch << ", " << timeout << ", " << outputPath << "):"
-	      << (msg == "" ? "ok" : msg) << std::endl;
+    TRACE(msg, batch, timeout, op);
     return msg.c_str();
 }
 const char* startCapture(int max) {
-    std::string msg = CAMERA(startCapture, max);
-    std::cerr << __func__ << "():" << (msg == "" ? "ok" : msg) << std::endl;
+    std::string msg = CAMERA(startCapture, max); TRACE(msg, max);
     return msg.c_str();
 }
 
 const char* openCamera() {
     assert(isAttached());
-    std::string msg = CAMERA(openCamera);
-    std::cerr << __func__ << "():" << (msg == "" ? "ok" : msg) << std::endl;
+    std::string msg = CAMERA(openCamera); TRACE(msg);
     return msg.c_str();
 }
 
 const char* closeCamera() {
-    std::string msg = CAMERA(closeCamera);
-    std::cerr << __func__ << "():" << (msg == "" ? "ok" : msg) << std::endl;
+    std::string msg = CAMERA(closeCamera); TRACE(msg);
     return msg.c_str();
 }
 
@@ -143,8 +144,7 @@ const char* setNodeMapIntParam(char* name, int value) {
     GenICam::gcstring op;
     op.assign(name);
     std::string msg = CAMERA(setNodeMapIntParam, op, (int64_t)value);
-    std::cerr << __func__ << "(" << name << ", " << value << "):"
-	      << (msg == "" ? "ok" : msg) << std::endl;
+    TRACE(msg, op, (int64_t)value);
     return msg.c_str();
 
 }
@@ -152,8 +152,7 @@ const char* setNodeMapFloatParam(char* name, double value) {
     GenICam::gcstring op;
     op.assign(name);
     std::string msg = CAMERA(setNodeMapFloatParam, op, value);
-    std::cerr << __func__ << "(" << name << ", " << value << "):"
-	      << (msg == "" ? "ok" : msg) << std::endl;
+    TRACE(msg, op, value);
     return msg.c_str();
 
 }
@@ -162,8 +161,7 @@ const char* setNodeMapEnumParam(char* name, char* value) {
     op.assign(name);
     v.assign(value);
     std::string msg = CAMERA(setNodeMapEnumParam, op, v);
-    std::cerr << __func__ << "(" << name << ", " << value << "):"
-	      << (msg == "" ? "ok" : msg) << std::endl;
+    TRACE(msg, op, v);
     return msg.c_str();
 }
 
@@ -186,13 +184,19 @@ int height() { return CAMERA(Height); }
  * EXTERNALLY VISIBLE END
  ******************************************************************************/
 
+static inline std::string ExceptionValue(const char* func,
+					 GenICam::GenericException &e) {
+    std::string msg = func;
+    msg += e.GetDescription();
+    std::cerr << msg << std::endl;
+    return msg;
+}
+
 std::string CameraWrapper::stopCapture() {
     try {
 	camera.Close();
     } catch (GenICam::GenericException &e) {
-        std::string msg = "stopCapture: "; msg += e.GetDescription();
-	std::cerr << msg << std::endl;
-	return msg;
+	return ExceptionValue(__func__, e);
     }
     return "";
 }
@@ -201,9 +205,7 @@ std::string CameraWrapper::attachDevice() {
     try {
 	this->camera.Attach(Pylon::CTlFactory::GetInstance().CreateFirstDevice());
     } catch (GenICam::GenericException &e) {
-        std::string msg = __func__; msg += ": "; msg += e.GetDescription();
-	std::cerr << msg << std::endl;
-	return msg;
+	return ExceptionValue(__func__, e);
     }
     return "";
 }
@@ -222,9 +224,7 @@ std::string CameraWrapper::openCamera() {
     try {
 	this->camera.Open();
     } catch (GenICam::GenericException &e) {
-        std::string msg = __func__; msg += ": "; msg += e.GetDescription();
-	std::cerr << msg << std::endl;
-	return msg;
+	return ExceptionValue(__func__, e);
     }
 
     GenApi::CIntegerPtr width(camera.GetNodeMap().GetNode("Width"));
@@ -293,6 +293,39 @@ bool CameraWrapper::isOpen() {
     return this->camera.IsOpen();
 }
 
+std::string CameraWrapper::fetch() {
+    static const uint32_t c_countOfImagesToGrab = 100;
+    const int timeout = 5000; // ms
+    try {
+	Pylon::CGrabResultPtr ptrGrabResult;
+	// this->camera.MaxNumBuffer = 10; // 10 is the default
+	this->camera.StartGrabbing(c_countOfImagesToGrab);
+    	while (this->camera.IsGrabbing()) {
+	    this->camera.RetrieveResult(timeout,
+	    				ptrGrabResult,
+					Pylon::TimeoutHandling_ThrowException);
+	    if (ptrGrabResult->GrabSucceeded()) {
+	    	int w = ptrGrabResult->GetWidth();
+		int h = ptrGrabResult->GetHeight();
+		const uint8_t *pImageBuffer = (uint8_t *) ptrGrabResult->GetBuffer();
+		std::cerr << "Taken image " << w << "x" << h
+			  << "Gray value of first pixel: "
+			  	<< (uint32_t) pImageBuffer[0]
+			  << std::endl << std::endl;
+	    } else {
+	    	std::cerr << "Error: "
+			  << ptrGrabResult->GetErrorCode()
+			  << " "
+			  << ptrGrabResult->GetErrorDescription()
+			  << std::endl;
+	    }
+	}
+    } catch (GenICam::GenericException &e) {
+	return ExceptionValue(__func__, e);
+    }
+    return "";
+}
+
 std::string CameraWrapper::retrieveAndSave(int batch,
                                            int timeout,
 					   std::string outputPath) {
@@ -337,9 +370,7 @@ std::string CameraWrapper::retrieveAndSave(int batch,
             return result.str();
         }
     } catch (GenICam::GenericException &e) {
-        std::string msg = __func__; msg += " exception: "; msg += e.GetDescription();
-	std::cerr << msg << std::endl;
-        return msg;
+	return ExceptionValue(__func__, e);
     }
     return "";
 }
@@ -356,61 +387,50 @@ std::string CameraWrapper::startCapture(int max) {
 					Pylon::GrabLoop_ProvidedByInstantCamera);
 	}
     } catch (GenICam::GenericException &e) {
-	std::string msg = __func__; msg += ":StartGrabbing: "; msg += e.GetDescription();
-	std::cerr << msg << std::endl;
         camera.Close();
-        return msg;
+	return ExceptionValue(__func__, e);
     }
     return "";
 }
 
 std::string CameraWrapper::configureCamera() {
-    std::string msg = __func__; msg += ": ";
+    std::string fn = __func__;
     try {
         this->camera.GainAuto.SetValue(Basler_XCamera::GainAuto_Continuous);
     } catch (GenICam::GenericException &e) {
-	msg += "GainAuto.Set: "; msg += e.GetDescription();
-	std::cerr << msg << std::endl;
-	return msg;
+    	fn += ".GainAuto";
+	return ExceptionValue(fn.c_str(), e);
     }
 #ifdef GIGE
-    msg += "GigE: ";
     this->camera.GainRaw.SetValue(1);
     this->camera.BlackLevelRaw.SetValue(90);
 #else
-    msg += "USB";
-    msg += this->openState(", cam is ");
-    msg += "; ";
     /*
     try {
         this->camera.Gain.SetValue(this->camera.Gain.GetMin());
     } catch (GenICam::GenericException &e) {
-        msg += "Gain.Set: "; msg += e.GetDescription();
-	std::cerr << msg << std::endl;
-	return msg;
+    	fn += ".Gain";
+	return ExceptionValue(fn.c_str(), e);
     }
     try {
         this->camera.BlackLevel.SetValue(90.0);
     } catch (GenICam::GenericException &e) {
-        msg += "BlackLevel.Set: "; msg += e.GetDescription();
-	std::cerr << msg << std::endl;
-	return msg;
+    	fn += ".BlackLevel";
+	return ExceptionValue(fn.c_str(), e);
     }
     */
 #endif
     try {
         this->camera.DigitalShift.SetValue(1);
     } catch (GenICam::GenericException &e) {
-        msg += "DigitalShift.Set: "; msg += e.GetDescription();
-	std::cerr << msg << std::endl;
-	return msg;
+    	fn += ".DigitalShift";
+	return ExceptionValue(fn.c_str(), e);
     }
     try {
         this->camera.ExposureAuto.SetValue(Basler_XCamera::ExposureAuto_Continuous);
     } catch (GenICam::GenericException &e) {
-        msg += "ExposureAuto.Set: "; msg += e.GetDescription();
-	std::cerr << msg << std::endl;
-	return msg;
+    	fn += ".ExposureAuto";
+	return ExceptionValue(fn.c_str(), e);
     }
     return "";
 }
@@ -421,9 +441,7 @@ std::string CameraWrapper::setNodeMapIntParam(const GenICam::gcstring name,
 	GenApi::CIntegerPtr(this->camera.GetNodeMap().GetNode(name)
 			   )->SetValue(value);
     } catch (GenICam::GenericException &e) {
-        std::string msg = "setNodeMapIntParam: "; msg += e.GetDescription();
-	std::cerr << msg << std::endl;
-	return msg;
+	return ExceptionValue(__func__, e);
     }
     return "";
 }
@@ -433,9 +451,7 @@ std::string CameraWrapper::setNodeMapFloatParam(const GenICam::gcstring name,
     try {
 	GenApi::CFloatPtr(this->camera.GetNodeMap().GetNode(name))->SetValue(value);
     } catch (GenICam::GenericException &e) {
-        std::string msg = "setNodeMapFloatParam: "; msg += e.GetDescription();
-	std::cerr << msg << std::endl;
-	return msg.c_str();
+	return ExceptionValue(__func__, e);
     }
     return "";
 }
@@ -446,9 +462,7 @@ std::string CameraWrapper::setNodeMapEnumParam(const GenICam::gcstring name,
 	GenApi::CEnumerationPtr(this->camera.GetNodeMap().GetNode(name)
 				)->FromString(value);
     } catch (GenICam::GenericException &e) {
-        std::string msg = "setNodeMapEnumParam: "; msg += e.GetDescription();
-	std::cerr << msg << std::endl;
-	return msg.c_str();
+	return ExceptionValue(__func__, e);
     }
     return "";
 }

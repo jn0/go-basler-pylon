@@ -66,6 +66,14 @@ func (cam *Camera) CloseCamera() error {
 	return nil
 }
 
+func (cam *Camera) Fetch() error {
+	s := C.GoString(C.fetch());
+	if s != "" {
+		return fmt.Errorf("Fetch: %v", s)
+	}
+	return nil
+}
+
 func (cam *Camera) StartCapture(max int) error {
 	cam.startMutex.Lock()
 	defer cam.startMutex.Unlock()
