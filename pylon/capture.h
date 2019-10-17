@@ -8,13 +8,13 @@ extern "C" {
 #include <stdint.h>
 #endif
 
+
 // prototypes
 void pylonInitialize();
 const char* stopCapture();
 const char* attachDevice();
 const char* configureCamera();
 const char* retrieveAndSave(int batch, int timeout, char* outputPath);
-const char* fetch();
 const char* startCapture(int max);
 const char* openCamera();
 const char* closeCamera();
@@ -37,9 +37,12 @@ int vendorId();
 int width();
 int height();
 
+// typedef int (*FrameCallbackType)(int w, int h, int pxt, int size, const char* buffer);
+extern int Go_fetch_callback(int, int, int, int, int, char*);
+
 void setFetchTimeout(uint32_t v);
 void setFetchCount(uint32_t v);
-
+const char* fetch(int idx);
 #ifdef __cplusplus
 }
 #endif

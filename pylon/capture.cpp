@@ -36,7 +36,7 @@ class CameraWrapper {
         std::string setNodeMapFloatParam(const GenICam::gcstring, double);
         std::string setNodeMapEnumParam(const GenICam::gcstring,
 					const GenICam::gcstring);
-	std::string fetch();
+	std::string fetch(int idx);
 
 	static const int NoIntValue = -1;
     private:
@@ -115,8 +115,8 @@ const char* setHardwareTriggerConfiguration() {
     return msg.c_str();
 }
 
-const char* fetch() {
-    std::string msg = CAMERA(fetch); TRACE(msg);
+const char* fetch(int idx) {
+    std::string msg = CAMERA(fetch, idx); TRACE(msg, idx);
     return msg.c_str();
 }
 
@@ -311,7 +311,13 @@ void CameraWrapper::setFetchCount(uint32_t v) {
     this->countOfImagesToGrab = v;
 }
 
-std::string CameraWrapper::fetch() {
+static inline int C_fetch_callback(int idx, // callback index
+				   int w, int h, int pxt, // image dimensions
+				   int size, const void *buf) { // image data
+	return Go_fetch_callback(idx, w, h, pxt, size, (char*)buf);
+}
+
+std::string CameraWrapper::fetch(int idx) {
     try {
 	Pylon::CGrabResultPtr ptrGrabResult;
 	// this->camera.MaxNumBuffer = 10; // 10 is the default
@@ -332,6 +338,9 @@ std::string CameraWrapper::fetch() {
 			  	<< (uint32_t) pImageBuffer[0]
 			  << std::endl
 			  << std::endl;
+		C_fetch_callback(idx,
+				 w, h, (int)pt,
+				 ImageBufferSize, pImageBuffer);
 	    } else {
 	    	std::cerr << "Error: "
 			  << ptrGrabResult->GetErrorCode()

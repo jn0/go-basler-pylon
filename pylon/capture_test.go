@@ -2,16 +2,16 @@ package pylon
 
 import (
 	"os"
+	"fmt"
 	"path"
 	"testing"
 )
 
-/*
-func FrameCallback(w, h, pxt, size uint, buffer []byte) int {
-	t.Logf("FrameCallback(w=%#v, h=%#v, pxt=%#v, size=%#v, buffer=%#v...)",
-		w, h, pxt, size, buffer[0])
+func FrameCallback(w, h, pxt, size int, buffer []byte) int {
+	fmt.Printf("FrameCallback(w=%#v, h=%#v, pxt=%#v, size=%#v, buffer=%#v...)",
+		   w, h, pxt, size, buffer[0])
+	return 0
 }
-*/
 
 func TestStart(t *testing.T) {
 	cam := &Camera{}
@@ -44,7 +44,9 @@ func TestStart(t *testing.T) {
 */
 	cam.SetFetchTimeout(5000) // ms
 	cam.SetFetchCount(10)
-	if e := cam.Fetch(); e != nil {
+	cb := FrameCallbackType(FrameCallback)
+	t.Logf("cb: %#v", cb)
+	if e := cam.Fetch(cb); e != nil {
 		t.Fatalf("Fetch failed: %v", e)
 	}
 
