@@ -83,6 +83,9 @@ type Registry struct {
 }
 func (r *Registry) Reg(f FrameCallbackType) int {
 	r.lock.Lock(); defer r.lock.Unlock()
+	if r.reg == nil {
+		r.reg = make(map[int]FrameCallbackType)
+	}
 	r.reg[r.last] = f
 	r.last++
 	return r.last - 1
