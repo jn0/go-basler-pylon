@@ -5,6 +5,7 @@
 extern "C" {
 #else
 #include <stdbool.h>
+#include <stdint.h>
 #endif
 
 // prototypes
@@ -35,6 +36,9 @@ int vendorId();
 
 int width();
 int height();
+
+void setFetchTimeout(uint32_t v);
+void setFetchCount(uint32_t v);
 
 #ifdef __cplusplus
 }

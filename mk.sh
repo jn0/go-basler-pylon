@@ -34,7 +34,6 @@ exec env \
     LD_LIBRARY_PATH="${PYLON_PATH}/lib64" \
     PYLON_PATH="${PYLON_PATH}" \
     CGO_CPPFLAGS="${CGO_CPPFLAGS}" \
-    CPATH="${CPATH}" \
     CGO_LDFLAGS="${CGO_LDFLAGS}" \
     go "$cmd" "$@"
 

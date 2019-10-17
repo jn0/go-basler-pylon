@@ -65,6 +65,13 @@ class CameraWrapper {
 	const char* DeviceVersion() { return deviceVersion.c_str(); }
 	const char* ProductId() { return productId.c_str(); }
 	const char* VendorId() { return vendorId.c_str(); }
+
+    private:
+	uint32_t countOfImagesToGrab = 100;
+	uint32_t grabTimeout = 5000; // ms
+    public:
+	void setFetchTimeout(uint32_t v);
+	void setFetchCount(uint32_t v);
 };
 
 static inline bool hasNoValue(std::string s) {
@@ -180,6 +187,9 @@ int vendorId() {
 
 int width() { return CAMERA(Width); }
 int height() { return CAMERA(Height); }
+
+void setFetchTimeout(uint32_t v) { CAMERA(setFetchTimeout, v); }
+void setFetchCount(uint32_t v) { CAMERA(setFetchCount, v); }
 /*
  * EXTERNALLY VISIBLE END
  ******************************************************************************/
@@ -293,25 +303,35 @@ bool CameraWrapper::isOpen() {
     return this->camera.IsOpen();
 }
 
+void CameraWrapper::setFetchTimeout(uint32_t v) {
+    this->grabTimeout = v;
+}
+
+void CameraWrapper::setFetchCount(uint32_t v) {
+    this->countOfImagesToGrab = v;
+}
+
 std::string CameraWrapper::fetch() {
-    static const uint32_t c_countOfImagesToGrab = 100;
-    const int timeout = 5000; // ms
     try {
 	Pylon::CGrabResultPtr ptrGrabResult;
 	// this->camera.MaxNumBuffer = 10; // 10 is the default
-	this->camera.StartGrabbing(c_countOfImagesToGrab);
+	this->camera.StartGrabbing(this->countOfImagesToGrab);
     	while (this->camera.IsGrabbing()) {
-	    this->camera.RetrieveResult(timeout,
+	    this->camera.RetrieveResult(this->grabTimeout,
 	    				ptrGrabResult,
 					Pylon::TimeoutHandling_ThrowException);
 	    if (ptrGrabResult->GrabSucceeded()) {
-	    	int w = ptrGrabResult->GetWidth();
-		int h = ptrGrabResult->GetHeight();
+	    	uint32_t w = ptrGrabResult->GetWidth();
+		uint32_t h = ptrGrabResult->GetHeight();
+		Pylon::EPixelType pt = ptrGrabResult->GetPixelType();
+		size_t ImageBufferSize = ptrGrabResult->GetImageSize();
 		const uint8_t *pImageBuffer = (uint8_t *) ptrGrabResult->GetBuffer();
 		std::cerr << "Taken image " << w << "x" << h
+			  << std::endl
 			  << "Gray value of first pixel: "
 			  	<< (uint32_t) pImageBuffer[0]
-			  << std::endl << std::endl;
+			  << std::endl
+			  << std::endl;
 	    } else {
 	    	std::cerr << "Error: "
 			  << ptrGrabResult->GetErrorCode()

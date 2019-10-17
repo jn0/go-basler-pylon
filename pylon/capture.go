@@ -66,6 +66,14 @@ func (cam *Camera) CloseCamera() error {
 	return nil
 }
 
+func (cam *Camera) SetFetchTimeout(v uint) {
+	C.setFetchTimeout(C.uint(v))
+}
+
+func (cam *Camera) SetFetchCount(v uint) {
+	C.setFetchCount(C.uint(v))
+}
+
 func (cam *Camera) Fetch() error {
 	s := C.GoString(C.fetch());
 	if s != "" {

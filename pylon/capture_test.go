@@ -6,6 +6,13 @@ import (
 	"testing"
 )
 
+/*
+func FrameCallback(w, h, pxt, size uint, buffer []byte) int {
+	t.Logf("FrameCallback(w=%#v, h=%#v, pxt=%#v, size=%#v, buffer=%#v...)",
+		w, h, pxt, size, buffer[0])
+}
+*/
+
 func TestStart(t *testing.T) {
 	cam := &Camera{}
 	imgPath := path.Join(os.TempDir(), "go-basler-pylon-test")
@@ -35,6 +42,8 @@ func TestStart(t *testing.T) {
 		t.Fatalf("RetrieveAndSave failed: %+v", e)
 	}
 */
+	cam.SetFetchTimeout(5000) // ms
+	cam.SetFetchCount(10)
 	if e := cam.Fetch(); e != nil {
 		t.Fatalf("Fetch failed: %v", e)
 	}
