@@ -8,6 +8,7 @@ import (
 	"time"
 	"image"
 	"image/jpeg"
+	"gopkg.in/gographics/imagick.v2/imagick"
 	"testing"
 )
 
@@ -43,6 +44,9 @@ func time2name(t time.Time, suffix string) string {
 }
 
 func TestStart(t *testing.T) {
+	imagick.Initialize(); defer imagick.Terminate()
+	mw := imagick.NewMagickWand(); defer mw.Destroy()
+
 	cam := &Camera{}
 	imgPath := path.Join(os.TempDir(), "go-basler-pylon-test")
 	os.RemoveAll(imgPath)
@@ -60,6 +64,8 @@ func TestStart(t *testing.T) {
 		i.Width, i.Height, i.ModelName, i.VendorName,
 		i.FullName, i.SerialNumber, i.DeviceVersion)
 
+	var saved []string
+
 	FrameCallback := func(w, h, pxt, size int, buffer []byte) int {
 		pt := EPixelType(pxt)
 		fmt.Printf("FrameCallback(w=%#v, h=%#v, pt=%08x=%s, size=%#v, buffer=%#v...)\n",
@@ -69,6 +75,7 @@ func TestStart(t *testing.T) {
 
 		path := filepath.Join(imgPath, time2name(t1.UTC(), ".jpg"))
 		try(t, save2jpeg(path, w, h, buffer))
+		saved = append(saved, path)
 
 		// UNTIL HERE
 		fmt.Printf("FrameCallback taken %v\n", time.Now().Sub(t1))
@@ -79,6 +86,16 @@ func TestStart(t *testing.T) {
 	cam.SetFetchCount(10)
 	cb := FrameCallbackType(FrameCallback)
 	try(t, cam.Fetch(cb), "Fetch failed: %v")
+
+	if len(saved) > 0 {
+		i := len(saved) / 2
+		try(t, mw.ReadImage(saved[i]))
+		w := mw.GetImageWidth()
+		h := mw.GetImageHeight()
+		try(t, mw.ResizeImage(w/2, h/2, imagick.FILTER_LANCZOS, 1))
+		try(t, mw.SetImageCompressionQuality(75))
+		try(t, mw.DisplayImage(os.Getenv("DISPLAY")))
+	}
 
 	if f, e := os.Open(imgPath); e != nil {
 		t.Fatalf("os.Open(%#v) failed: %v", imgPath, e)
