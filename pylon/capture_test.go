@@ -7,13 +7,6 @@ import (
 	"testing"
 )
 
-func FrameCallback(w, h, pxt, size int, buffer []byte) int {
-	pt := EPixelType(pxt)
-	fmt.Printf("FrameCallback(w=%#v, h=%#v, pt=%08x=%s, size=%#v, buffer=%#v...)\n",
-		   w, h, pxt, pt.String(), size, buffer[0])
-	return 0
-}
-
 func TestStart(t *testing.T) {
 	cam := &Camera{}
 	imgPath := path.Join(os.TempDir(), "go-basler-pylon-test")
@@ -33,20 +26,16 @@ func TestStart(t *testing.T) {
 		i.FullName, i.SerialNumber, i.DeviceVersion)
 	}
 
-/*
-	if e := cam.StartCapture(500); e != nil {
-		t.Fatalf("StartCapture failed: %v", e)
+	FrameCallback := func(w, h, pxt, size int, buffer []byte) int {
+		pt := EPixelType(pxt)
+		fmt.Printf("FrameCallback(w=%#v, h=%#v, pt=%08x=%s, size=%#v, buffer=%#v...)\n",
+			   w, h, pxt, pt.String(), size, buffer[0])
+		return 0
 	}
-	defer cam.StopCapture()
 
-	if e := cam.RetrieveAndSave(1, 5000, imgPath+"/"); e != nil {
-		t.Fatalf("RetrieveAndSave failed: %+v", e)
-	}
-*/
 	cam.SetFetchTimeout(5000) // ms
 	cam.SetFetchCount(10)
 	cb := FrameCallbackType(FrameCallback)
-	t.Logf("cb: %#v", cb)
 	if e := cam.Fetch(cb); e != nil {
 		t.Fatalf("Fetch failed: %v", e)
 	}
