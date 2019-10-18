@@ -1,7 +1,7 @@
 // Copyright (C) jno, 2019; License: MIT
 
 // As the `RetrieveAndSave` does not work for me.
-// So, I follow the code from // $PYLON_HOME/Samples/C++/Grab/Grab.cpp - it works.
+// So, I follow the code from $PYLON_HOME/Samples/C++/Grab/Grab.cpp - it works.
 // Plus, I prefer to handle grabbed image on "application level" and not
 // bury it hardcoded somewhere in C++ underpants.
 // So, the callback implementation.
