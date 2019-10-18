@@ -45,9 +45,8 @@ func (cam *Camera) OpenCamera() error {
 	cam.openMutex.Lock()
 	defer cam.openMutex.Unlock()
 	if !C.isOpen() {
-		s := C.GoString(C.openCamera())
-		if s != "" {
-			return fmt.Errorf("OpenCamera: %v", s)
+		if e := C.GoString(C.openCamera()); e != "" {
+			return fmt.Errorf("OpenCamera: %v", e)
 		}
 	}
 	return nil
@@ -57,9 +56,8 @@ func (cam *Camera) CloseCamera() error {
 	cam.openMutex.Lock()
 	defer cam.openMutex.Unlock()
 	if C.isOpen() {
-		s := C.GoString(C.closeCamera())
-		if s != "" {
-			return fmt.Errorf("CloseCamera: %v", s)
+		if e := C.GoString(C.closeCamera()); e != "" {
+			return fmt.Errorf("CloseCamera: %v", e)
 		}
 	}
 	return nil
@@ -69,9 +67,8 @@ func (cam *Camera) StartCapture(max int) error {
 	cam.startMutex.Lock()
 	defer cam.startMutex.Unlock()
 	if !C.isCameraGrabbing() {
-		s := C.startCapture(C.int(max))
-		if errMsg := C.GoString(s); errMsg != "" {
-			return fmt.Errorf("StartCapture: %v", errMsg)
+		if e := C.GoString(C.startCapture(C.int(max))); e != "" {
+			return fmt.Errorf("StartCapture: %v", e)
 		}
 	}
 	return nil
@@ -88,9 +85,8 @@ func (cam *Camera) StopCapture() error {
 	cam.startMutex.Lock()
 	defer cam.startMutex.Unlock()
 	if C.isCameraGrabbing() {
-		s := C.GoString(C.stopCapture())
-		if s != "" {
-			return fmt.Errorf("StopCapture: %v", s)
+		if e := C.GoString(C.stopCapture()); e != "" {
+			return fmt.Errorf("StopCapture: %v", e)
 		}
 	}
 	return nil
@@ -100,9 +96,8 @@ func (cam *Camera) AttachDevice() error {
 	cam.attachedMutex.Lock()
 	defer cam.attachedMutex.Unlock()
 	if !C.isAttached() {
-		s := C.GoString(C.attachDevice())
-		if s != "" {
-			return fmt.Errorf("AttachDevice: %v", s)
+		if e := C.GoString(C.attachDevice()); e != "" {
+			return fmt.Errorf("AttachDevice: %v", e)
 		}
 	}
 	return nil
@@ -121,8 +116,8 @@ func (cam *Camera) ConfigureCamera() error {
 		return fmt.Errorf("ConfigureCamera: Camera is grabbing.")
 	}
 
-	if msg := C.GoString(C.configureCamera()); msg != "" {
-		return fmt.Errorf("ConfigureCamera: %s", msg)
+	if e := C.GoString(C.configureCamera()); e != "" {
+		return fmt.Errorf("ConfigureCamera: %v", e)
 	}
 	return nil
 }
@@ -140,9 +135,8 @@ func (cam *Camera) SetHardwareTriggerConfiguration() error {
 		return fmt.Errorf("Camera is grabbing.")
 	}
 
-	s := C.GoString(C.setHardwareTriggerConfiguration())
-	if s != "" {
-		return fmt.Errorf("SetHardwareTriggerConfiguration: %v", s)
+	if e := C.GoString(C.setHardwareTriggerConfiguration()); e != "" {
+		return fmt.Errorf("SetHardwareTriggerConfiguration: %v", e)
 	}
 	return nil
 }
@@ -150,9 +144,10 @@ func (cam *Camera) SetHardwareTriggerConfiguration() error {
 func (cam *Camera) RetrieveAndSave(batch, timeout int, outputPath string) error {
 	cOutputPath := C.CString(outputPath)
 	defer C.free(unsafe.Pointer(cOutputPath))
-	s := C.retrieveAndSave(C.int(batch), C.int(timeout), cOutputPath)
-	if errMsg := C.GoString(s); errMsg != "" {
-		return fmt.Errorf("RetrieveAndSave: %v", errMsg)
+	if e := C.GoString(C.retrieveAndSave(C.int(batch),
+					     C.int(timeout),
+					     cOutputPath)); e != "" {
+		return fmt.Errorf("RetrieveAndSave: %v", e)
 	}
 	return nil
 }
