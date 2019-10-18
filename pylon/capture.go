@@ -66,59 +66,6 @@ func (cam *Camera) CloseCamera() error {
 	return nil
 }
 
-func (cam *Camera) SetFetchTimeout(v uint) {
-	C.setFetchTimeout(C.uint(v))
-}
-
-func (cam *Camera) SetFetchCount(v uint) {
-	C.setFetchCount(C.uint(v))
-}
-
-type FrameCallbackType func(w, h, pxt, size int, buffer []byte) int
-
-type Registry struct {
-	last int
-	reg map[int]FrameCallbackType
-	lock sync.Mutex
-}
-func (r *Registry) Reg(f FrameCallbackType) int {
-	r.lock.Lock(); defer r.lock.Unlock()
-	if r.reg == nil {
-		r.reg = make(map[int]FrameCallbackType)
-	}
-	r.reg[r.last] = f
-	r.last++
-	return r.last - 1
-}
-func (r *Registry) Get(i int) FrameCallbackType {
-	if i < 0 || i >= r.last {
-		panic("!!")
-	}
-	return r.reg[i]
-}
-var reg = Registry{}
-
-//export Go_fetch_callback
-func Go_fetch_callback(i C.int, w C.int, h C.int, pxt C.int, size C.int, buffer *C.char) C.int {
-	W := int(w)
-	H := int(h)
-	P := int(pxt)
-	Z := int(size)
-	B := C.GoBytes(unsafe.Pointer(buffer), size)
-	fmt.Printf("\ncallback(w=%#v, h=%#v, pxt=%#v, size=%#v, buf=%#v)\n", W, H, P, Z, B[0])
-	f := reg.Get(int(i))
-	return C.int(f(W, H, P, Z, B))
-}
-
-func (cam *Camera) Fetch(cb func(w, h, pxt, size int, buffer []byte) int) error {
-	idx := reg.Reg(cb)
-	s := C.GoString(C.fetch(C.int(idx)));
-	if s != "" {
-		return fmt.Errorf("Fetch: %v", s)
-	}
-	return nil
-}
-
 func (cam *Camera) StartCapture(max int) error {
 	cam.startMutex.Lock()
 	defer cam.startMutex.Unlock()

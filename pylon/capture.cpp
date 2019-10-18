@@ -303,20 +303,44 @@ bool CameraWrapper::isOpen() {
     return this->camera.IsOpen();
 }
 
-void CameraWrapper::setFetchTimeout(uint32_t v) {
-    this->grabTimeout = v;
-}
-
-void CameraWrapper::setFetchCount(uint32_t v) {
-    this->countOfImagesToGrab = v;
-}
-
+/******************************************************************************
+ * BEGIN FETCH-RELATED STUFF
+ */
 static inline int C_fetch_callback(int idx, // callback index
 				   int w, int h, int pxt, // image dimensions
 				   int size, const void *buf) { // image data
 	return Go_fetch_callback(idx, w, h, pxt, size, (char*)buf);
 }
 
+static int handleGrabResult(int idx, Pylon::CGrabResultPtr ptrGrabResult) {
+    if (!ptrGrabResult->GrabSucceeded()) {
+	return -1;
+    }
+
+    uint32_t w = ptrGrabResult->GetWidth();
+    uint32_t h = ptrGrabResult->GetHeight();
+    Pylon::EPixelType pt = ptrGrabResult->GetPixelType(); // it's enum e.i. int
+
+    size_t ImageBufferSize = ptrGrabResult->GetImageSize();
+    const uint8_t *pImageBuffer = (uint8_t *) ptrGrabResult->GetBuffer();
+
+    std::cerr << "Taken image " << w << "x" << h
+	      << std::endl
+	      << "Gray value of first pixel: "
+    		<< (uint32_t) pImageBuffer[0]
+	      << std::endl;
+
+    int rc = C_fetch_callback(idx,	// callback selector
+			      w, h, (int)pt,	// image props
+			      ImageBufferSize, pImageBuffer); // image data
+
+    std::cerr << "Callback returned " << rc
+	      << std::endl
+	      << std::endl;
+    return 0;
+}
+
+// CameraWrapper::fetch() receieves a callback index as the argument
 std::string CameraWrapper::fetch(int idx) {
     try {
 	Pylon::CGrabResultPtr ptrGrabResult;
@@ -326,22 +350,8 @@ std::string CameraWrapper::fetch(int idx) {
 	    this->camera.RetrieveResult(this->grabTimeout,
 	    				ptrGrabResult,
 					Pylon::TimeoutHandling_ThrowException);
-	    if (ptrGrabResult->GrabSucceeded()) {
-	    	uint32_t w = ptrGrabResult->GetWidth();
-		uint32_t h = ptrGrabResult->GetHeight();
-		Pylon::EPixelType pt = ptrGrabResult->GetPixelType();
-		size_t ImageBufferSize = ptrGrabResult->GetImageSize();
-		const uint8_t *pImageBuffer = (uint8_t *) ptrGrabResult->GetBuffer();
-		std::cerr << "Taken image " << w << "x" << h
-			  << std::endl
-			  << "Gray value of first pixel: "
-			  	<< (uint32_t) pImageBuffer[0]
-			  << std::endl
-			  << std::endl;
-		C_fetch_callback(idx,
-				 w, h, (int)pt,
-				 ImageBufferSize, pImageBuffer);
-	    } else {
+
+	    if (handleGrabResult(idx, ptrGrabResult)) {
 	    	std::cerr << "Error: "
 			  << ptrGrabResult->GetErrorCode()
 			  << " "
@@ -354,6 +364,18 @@ std::string CameraWrapper::fetch(int idx) {
     }
     return "";
 }
+
+void CameraWrapper::setFetchTimeout(uint32_t v) {
+    this->grabTimeout = v;
+}
+
+void CameraWrapper::setFetchCount(uint32_t v) {
+    this->countOfImagesToGrab = v;
+}
+
+/*
+ * END OF FETCH
+ ******************************************************************************/
 
 std::string CameraWrapper::retrieveAndSave(int batch,
                                            int timeout,
