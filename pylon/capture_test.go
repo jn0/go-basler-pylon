@@ -8,8 +8,7 @@ import (
 )
 
 func FrameCallback(w, h, pxt, size int, buffer []byte) int {
-	var pt EPixelType
-	pt.Set(pxt)
+	pt := EPixelType(pxt)
 	fmt.Printf("FrameCallback(w=%#v, h=%#v, pt=%08x=%s, size=%#v, buffer=%#v...)\n",
 		   w, h, pxt, pt.String(), size, buffer[0])
 	return 0

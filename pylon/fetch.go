@@ -57,68 +57,69 @@ func (cam *Camera) Fetch(cb func(w, h, pxt, size int, buffer []byte) int) error 
 // 0x00CD0000 is "pixel width" (bits per pixel), and
 // 0x00001234 is "pixel subtype" (just serial number).
 // See $PYLON_HOME/include/pylon/PixelType.h for details
-type EPixelType struct {
-	value int
-	IsValid, IsUndefined, IsCustom, IsMono, IsColor bool
-	Bits int
-	Type int
-}
+type EPixelType int
 
 func (pt *EPixelType) String() string {
-	if pt.IsValid {
-		if pt.IsUndefined {
-			return "<EPixelType:UNDEFINED>"
-		}
-		var class string = ""
-		if pt.IsCustom {
-			class = "CUSTOM"
-		}
-		if pt.IsColor {
-			if class != "" {
-				class += ","
-			}
-			class += "COLOR"
-		}
-		if pt.IsMono {
-			if class != "" {
-				class += ","
-			}
-			class += "MONO"
-		}
-		return fmt.Sprintf("<EPixelType:%s(%d)%04x>",
-				   class, pt.Bits, pt.Type)
+	if !pt.IsValid() {
+		return fmt.Sprintf("<EPixelType(%08x)Invalid>", *pt)
 	}
-	return fmt.Sprintf("<EPixelType(%08x)Invalid>", pt.value)
+	if pt.IsUndefined() {
+		return "<EPixelType:UNDEFINED>"
+	}
+	return fmt.Sprintf("<EPixelType:%s(%d)%04x>",
+			   pt.ClassName(), pt.Bits(), pt.Type())
 }
 
-func (pt *EPixelType) Set(v int) {
-	pt.value = v
-	pt.IsValid = false
-	pt.IsUndefined = false
-	pt.IsCustom = false
-	pt.IsMono = false
-	pt.IsColor = false
-	pt.Bits = 0
-	pt.Type = 0
-	if v == -1 {
-		pt.IsValid = true
-		pt.IsUndefined = true
-		return
+func (pt *EPixelType) ClassName() string {
+	var class string = ""
+	if pt.IsCustom() {
+		class = "CUSTOM"
 	}
-	pt.Bits = (v >> 16) & 0x0ff
-	pt.Type = v & 0x0ffff
+	if pt.IsColor() {
+		if class != "" {
+			class += ","
+		}
+		class += "COLOR"
+	}
+	if pt.IsMono() {
+		if class != "" {
+			class += ","
+		}
+		class += "MONO"
+	}
+	return class
+}
 
-	class := int((v >> 24) & 0x0ff)
-	if class & 0x01 == 0x01 {
-		pt.IsMono = true
-	}
-	if class & 0x02 == 0x02 {
-		pt.IsColor = true
-	}
-	if class & 0x80 == 0x80 {
-		pt.IsCustom = true
-	}
-	pt.IsValid = class & ^(0x01 | 0x02 | 0x80) == 0
+func (pt *EPixelType) IsValid() bool {
+	class := int((*pt >> 24) & 0x0ff)
+	return pt.IsUndefined() || class & ^(0x01 | 0x02 | 0x80) == 0
+}
+
+func (pt *EPixelType) IsMono() bool {
+	class := int((*pt >> 24) & 0x0ff)
+	return class & 0x01 == 0x01
+}
+
+func (pt *EPixelType) IsColor() bool {
+	class := int((*pt >> 24) & 0x0ff)
+	return class & 0x02 == 0x02
+}
+
+func (pt *EPixelType) IsCustom() bool {
+	class := int((*pt >> 24) & 0x0ff)
+	return class & 0x80 == 0x80
+}
+
+func (pt *EPixelType) Bits() int {
+	return int((*pt >> 16) & 0x0ff)
+}
+
+func (pt *EPixelType) Type() int {
+	return int(*pt & 0x0ffff)
+}
+
+func (pt *EPixelType) IsUndefined() bool {
+	return *pt == -1
 }
 
 /* EOF */
