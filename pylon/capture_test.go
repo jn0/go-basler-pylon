@@ -18,6 +18,25 @@ func try(t *testing.T, e error, args ...string) {
 	if e != nil { t.Fatalf(format, e); }
 }
 
+func save(path string, width, height int, data []byte) error {
+	a := image.NewGray(image.Rect(0, 0, width, height))
+	a.Pix = data
+
+	if of, e := os.Create(path); e != nil {
+		return fmt.Errorf("Cannot Create(%#v): %v", path, e)
+	} else {
+		jpeg.Encode(of, a, nil)
+		of.Close()
+		fmt.Printf("Written to %#v\n", path)
+	}
+	return nil
+}
+
+func time2name(t time.Time, suffix string) string {
+	nsecs := t.Unix() * 1000000000 + int64(t.Nanosecond())
+	return fmt.Sprintf("%x%s", nsecs / 1000, suffix)
+}
+
 func TestStart(t *testing.T) {
 	cam := &Camera{}
 	imgPath := path.Join(os.TempDir(), "go-basler-pylon-test")
@@ -37,38 +56,17 @@ func TestStart(t *testing.T) {
 		i.FullName, i.SerialNumber, i.DeviceVersion)
 
 	FrameCallback := func(w, h, pxt, size int, buffer []byte) int {
-		t1 := time.Now()
 		pt := EPixelType(pxt)
 		fmt.Printf("FrameCallback(w=%#v, h=%#v, pt=%08x=%s, size=%#v, buffer=%#v...)\n",
 			   w, h, pxt, pt.String(), size, buffer[0])
-		// DO STUFF HERE
-		/*
-		for y := 0; y < h; y++ {
-			for x := 0; x < w; x++ {
-				i := y * w + x
-				p := buffer[i]
-			}
-		}
-		*/
+		t1 := time.Now()
+		// DO STUFF FROM HERE
 
-		r := image.Rect(0, 0, w, h)
-		a := image.NewGray(r)
-		a.Pix = buffer
+		path := filepath.Join(imgPath, time2name(t1.UTC(), ".jpg"))
+		try(t, save(path, w, h, buffer))
 
-		nsecs := t1.UTC().Unix() * 1000000000 + int64(t1.UTC().Nanosecond())
-		imgName := fmt.Sprintf("%x.jpg", nsecs / 1000)
-		path := filepath.Join(imgPath, imgName)
-		if of, e := os.Create(path); e != nil {
-			t.Fatalf("Cannot Create(%#v): %v", path, e)
-		} else {
-			jpeg.Encode(of, a, nil)
-			of.Close()
-			fmt.Printf("Written to %#v\n", path)
-		}
-
-		t2 := time.Now()
-		dt := t2.Sub(t1)
-		fmt.Printf("FrameCallback taken %v\n", dt)
+		// UNTIL HERE
+		fmt.Printf("FrameCallback taken %v\n", time.Now().Sub(t1))
 		return 0
 	}
 
