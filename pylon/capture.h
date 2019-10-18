@@ -1,13 +1,14 @@
 #ifndef CAPTURE_H
 #define CAPTURE_H
 
+#undef VERBOSE /* one may #define it here ... */
+
 #ifdef __cplusplus 
 extern "C" {
 #else
 #include <stdbool.h>
 #include <stdint.h>
 #endif
-
 
 // prototypes
 void pylonInitialize();

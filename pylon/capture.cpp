@@ -83,10 +83,13 @@ static inline int hex2int(std::string s, int dflt) {
 }
 
 #define CAMERA(op, ...) CameraWrapper::getInstance().op(__VA_ARGS__)
+#ifdef VERBOSE
 #define TRACE(msg, ...) std::cerr << __func__ << "(" #__VA_ARGS__ "):" \
 				  << ((msg) == "" ? "ok" : msg) \
 				  << std::endl
-
+#else
+#define TRACE(msg, ...) ((void)0)
+#endif
 /******************************************************************************
  * EXTERNALLY VISIBLE BEGIN
  */
@@ -198,7 +201,7 @@ static inline std::string ExceptionValue(const char* func,
 					 GenICam::GenericException &e) {
     std::string msg = func;
     msg += e.GetDescription();
-    std::cerr << msg << std::endl;
+    std::cerr << std::endl << "Exception: " << msg << std::endl;
     return msg;
 }
 
@@ -252,6 +255,7 @@ std::string CameraWrapper::openCamera() {
     this->productId.assign(INFOS(info, ProductId));
     this->vendorId.assign(INFOS(info, VendorId));
 
+#ifdef VERBOSE
     std::cerr << "Camera [" << this->Width() << "×" << this->Height() << "]" << std::endl
 	      << OUTS(fullName)
 	      << OUTS(vendorName)
@@ -261,21 +265,7 @@ std::string CameraWrapper::openCamera() {
 	      << OUTS(productId)
 	      << OUTS(vendorId)
 	      ;
-/*
-    Pylon::CPylonUsbCameraT::DeviceInfo_t di = this->camera.GetDeviceInfo();
-    std::cerr << "Camera ["
-	      << di->GetFullName().c_str()
-	      << "]" << std::endl;
-    StringList_t props;
-    di->GetPropertyNames(&props);
-    String_t name = props.first();
-    while (name) {
-    	String_t value;
-    	di->GetPropertyValue(name, &value);
-	name = props.next();
-	std::cerr << "[" << name << "]=[" << value << "]" << std::endl;
-    }
-*/
+#endif
     return "";
 }
 
@@ -324,19 +314,21 @@ static int handleGrabResult(int idx, Pylon::CGrabResultPtr ptrGrabResult) {
     size_t ImageBufferSize = ptrGrabResult->GetImageSize();
     const uint8_t *pImageBuffer = (uint8_t *) ptrGrabResult->GetBuffer();
 
+#ifdef VERBOSE
     std::cerr << "Taken image " << w << "x" << h
 	      << std::endl
 	      << "Gray value of first pixel: "
     		<< (uint32_t) pImageBuffer[0]
 	      << std::endl;
-
+#endif
     int rc = C_fetch_callback(idx,	// callback selector
 			      w, h, (int)pt,	// image props
 			      ImageBufferSize, pImageBuffer); // image data
-
+#ifdef VERBOSE
     std::cerr << "Callback returned " << rc
 	      << std::endl
 	      << std::endl;
+#endif
     return 0;
 }
 
