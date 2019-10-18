@@ -54,7 +54,6 @@ func (cam *Camera) OpenCamera() error {
 }
 
 func (cam *Camera) CloseCamera() error {
-	fmt.Println("CloseCamera() called")
 	cam.openMutex.Lock()
 	defer cam.openMutex.Unlock()
 	if C.isOpen() {
