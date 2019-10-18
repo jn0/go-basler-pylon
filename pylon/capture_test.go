@@ -7,24 +7,30 @@ import (
 	"testing"
 )
 
+func try(t *testing.T, e error, args ...string) {
+	if len(args) > 1 { panic("try(*testing.T, error[, \"format\"])"); }
+	format := "Failed with %v"
+	if len(args) > 0 { format = args[0]; }
+	if e != nil { t.Fatalf(format, e); }
+}
+
 func TestStart(t *testing.T) {
 	cam := &Camera{}
 	imgPath := path.Join(os.TempDir(), "go-basler-pylon-test")
 	os.RemoveAll(imgPath)
 
-	if e := os.MkdirAll(imgPath, 0777); e != nil { t.Fatalf("Failed with %v", e); }
+	try(t, os.MkdirAll(imgPath, 0777))
 
-	if e := cam.AttachDevice(); e != nil { t.Fatalf("Failed with %v", e); }
-	if e := cam.OpenCamera(); e != nil { t.Fatalf("Failed with %v", e); }
+	try(t, cam.AttachDevice())
+	try(t, cam.OpenCamera())
 	defer cam.CloseCamera()
-	if e := cam.ConfigureCamera(); e != nil { t.Errorf("Failed with %#v", e); }
+	try(t, cam.ConfigureCamera())
 
-	if i, e := cam.Info(); e != nil { t.Fatalf("Failed with %v", e); } else {
+	i, e := cam.Info(); try(t, e)
 	t.Logf("camera USB[%04x:%04x] is %d×%d %#v by %#v, %#v, serial %#v, version %#v",
 		i.VendorId, i.ProductId,
 		i.Width, i.Height, i.ModelName, i.VendorName,
 		i.FullName, i.SerialNumber, i.DeviceVersion)
-	}
 
 	FrameCallback := func(w, h, pxt, size int, buffer []byte) int {
 		pt := EPixelType(pxt)
@@ -36,9 +42,7 @@ func TestStart(t *testing.T) {
 	cam.SetFetchTimeout(5000) // ms
 	cam.SetFetchCount(10)
 	cb := FrameCallbackType(FrameCallback)
-	if e := cam.Fetch(cb); e != nil {
-		t.Fatalf("Fetch failed: %v", e)
-	}
+	try(t, cam.Fetch(cb), "Fetch failed: %v")
 
 	if f, e := os.Open(imgPath); e != nil {
 		t.Fatalf("os.Open(%#v) failed: %v", imgPath, e)
