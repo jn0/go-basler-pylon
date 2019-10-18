@@ -4,6 +4,10 @@ import (
 	"os"
 	"fmt"
 	"path"
+	"path/filepath"
+	"time"
+	"image"
+	"image/jpeg"
 	"testing"
 )
 
@@ -33,9 +37,38 @@ func TestStart(t *testing.T) {
 		i.FullName, i.SerialNumber, i.DeviceVersion)
 
 	FrameCallback := func(w, h, pxt, size int, buffer []byte) int {
+		t1 := time.Now()
 		pt := EPixelType(pxt)
 		fmt.Printf("FrameCallback(w=%#v, h=%#v, pt=%08x=%s, size=%#v, buffer=%#v...)\n",
 			   w, h, pxt, pt.String(), size, buffer[0])
+		// DO STUFF HERE
+		/*
+		for y := 0; y < h; y++ {
+			for x := 0; x < w; x++ {
+				i := y * w + x
+				p := buffer[i]
+			}
+		}
+		*/
+
+		r := image.Rect(0, 0, w, h)
+		a := image.NewGray(r)
+		a.Pix = buffer
+
+		nsecs := t1.UTC().Unix() * 1000000000 + int64(t1.UTC().Nanosecond())
+		imgName := fmt.Sprintf("%x.jpg", nsecs / 1000)
+		path := filepath.Join(imgPath, imgName)
+		if of, e := os.Create(path); e != nil {
+			t.Fatalf("Cannot Create(%#v): %v", path, e)
+		} else {
+			jpeg.Encode(of, a, nil)
+			of.Close()
+			fmt.Printf("Written to %#v\n", path)
+		}
+
+		t2 := time.Now()
+		dt := t2.Sub(t1)
+		fmt.Printf("FrameCallback taken %v\n", dt)
 		return 0
 	}
 
