@@ -18,7 +18,7 @@ func try(t *testing.T, e error, args ...string) {
 	if e != nil { t.Fatalf(format, e); }
 }
 
-var JpegOptions = jpeg.Options{ Quality: 85 } // sorta const, yeah
+var JpegOptions = jpeg.Options{ Quality: jpeg.DefaultQuality } // sorta const, yeah
 
 func save2jpeg(path string, width, height int, data []byte) error {
 	a := image.NewGray(image.Rect(0, 0, width, height))
