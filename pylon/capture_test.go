@@ -18,15 +18,20 @@ func try(t *testing.T, e error, args ...string) {
 	if e != nil { t.Fatalf(format, e); }
 }
 
-func save(path string, width, height int, data []byte) error {
+var JpegOptions = jpeg.Options{ Quality: 85 } // sorta const, yeah
+
+func save2jpeg(path string, width, height int, data []byte) error {
 	a := image.NewGray(image.Rect(0, 0, width, height))
 	a.Pix = data
 
 	if of, e := os.Create(path); e != nil {
 		return fmt.Errorf("Cannot Create(%#v): %v", path, e)
 	} else {
-		jpeg.Encode(of, a, nil)
+		e := jpeg.Encode(of, a, &JpegOptions)
 		of.Close()
+		if e != nil {
+			return fmt.Errorf("Cannot Encode() to %#v: %v", path, e)
+		}
 		fmt.Printf("Written to %#v\n", path)
 	}
 	return nil
@@ -63,7 +68,7 @@ func TestStart(t *testing.T) {
 		// DO STUFF FROM HERE
 
 		path := filepath.Join(imgPath, time2name(t1.UTC(), ".jpg"))
-		try(t, save(path, w, h, buffer))
+		try(t, save2jpeg(path, w, h, buffer))
 
 		// UNTIL HERE
 		fmt.Printf("FrameCallback taken %v\n", time.Now().Sub(t1))
