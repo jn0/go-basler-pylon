@@ -11,17 +11,21 @@ extern "C" {
 #endif
 
 // prototypes
-void pylonInitialize();
-const char* stopCapture();
+void pylonInitialize();	// one have not to call these functions
+void pylonTerminate();	// normally
+
 const char* attachDevice();
 const char* configureCamera();
-const char* retrieveAndSave(int batch, int timeout, char* outputPath);
-const char* startCapture(int max);
 const char* openCamera();
+const char* startCapture(int max);
+const char* retrieveAndSave(int batch, int timeout, char* outputPath);
+const char* stopCapture();
 const char* closeCamera();
+
 bool isCameraGrabbing();
 bool isAttached();
 bool isOpen();
+
 const char* setHardwareTriggerConfiguration();
 const char* setNodeMapIntParam(char* name, int value);
 const char* setNodeMapFloatParam(char* name, double value);

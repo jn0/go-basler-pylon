@@ -93,8 +93,15 @@ static inline int hex2int(std::string s, int dflt) {
 /******************************************************************************
  * EXTERNALLY VISIBLE BEGIN
  */
+
+// The init/shutdown is normally performed by the Pylon::PylonAutoInitTerm
+// These funcs are here for completeness only!
 void pylonInitialize() {
 	Pylon::PylonInitialize();
+}
+
+void pylonTerminate() {
+	Pylon::PylonTerminate(true);
 }
 
 const char* stopCapture() {
@@ -200,6 +207,7 @@ void setFetchCount(uint32_t v) { CAMERA(setFetchCount, v); }
 static inline std::string ExceptionValue(const char* func,
 					 GenICam::GenericException &e) {
     std::string msg = func;
+    msg += ": ";
     msg += e.GetDescription();
     std::cerr << std::endl << "Exception: " << msg << std::endl;
     return msg;
