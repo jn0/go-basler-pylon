@@ -6,9 +6,6 @@ import (
 	"path"
 	"path/filepath"
 	"time"
-	"image"
-	"image/jpeg"
-	"gopkg.in/gographics/imagick.v2/imagick"
 	"testing"
 )
 
@@ -19,35 +16,13 @@ func try(t *testing.T, e error, args ...string) {
 	if e != nil { t.Fatalf(format, e); }
 }
 
-// save to JPEG using Go's builtin facility
-var GoJpegOptions = jpeg.Options{ Quality: jpeg.DefaultQuality } // sorta const, yeah
-func go_save2jpeg(path string, width, height int, data []byte) error {
-	a := image.NewGray(image.Rect(0, 0, width, height))
-	a.Pix = data
-
-	if of, e := os.Create(path); e != nil {
-		return fmt.Errorf("Cannot Create(%#v): %v", path, e)
-	} else {
-		e := jpeg.Encode(of, a, &GoJpegOptions)
-		of.Close()
-		if e != nil {
-			return fmt.Errorf("Cannot Encode() to %#v: %v", path, e)
-		}
-		fmt.Printf("Written to %#v\n", path)
-	}
-	return nil
-}
-
 func time2name(t time.Time, suffix string) string {
 	nsecs := t.Unix() * 1000000000 + int64(t.Nanosecond())
 	return fmt.Sprintf("%x%s", nsecs / 1000, suffix)
 }
 
 func TestStart(t *testing.T) {
-	imagick.Initialize(); defer imagick.Terminate()
-	imName, imVer := imagick.GetVersion()
-	fmt.Printf("About to use ImageMagick %#v (%v)\n\n", imName, imVer)
-	mw := imagick.NewMagickWand(); defer mw.Destroy()
+	mw := im_setup(); defer im_cleanup(mw)
 
 	cam := &Camera{}
 	imgPath := path.Join(os.TempDir(), "go-basler-pylon-test")
@@ -76,24 +51,10 @@ func TestStart(t *testing.T) {
 		// DO STUFF FROM HERE
 
 		path := filepath.Join(imgPath, time2name(t1.UTC(), ".jpg"))
-		// try(t, go_save2jpeg(path, w, h, buffer))
-/*
-		var ii imagick.ImageInfo
-		var bg imagick.MagickPixelPacket
-		imagic.NewMagicImage(&ii, w, h, &bg)
-*/
-		mw.ResetIterator()
-		pw := imagick.NewPixelWand(); defer pw.Destroy()
-		t.Logf("SetColor(gray): %v", pw.SetColor("gray"))
-		try(t, mw.NewImage(uint(w), uint(h), pw), "NewImage: %v")
-		try(t, mw.ImportImagePixels(0, 0, // start
-					    uint(w), uint(h), // size
-					    "I", imagick.PIXEL_CHAR, // type
-					    buffer), // data
-		    "ImportImagePixels: %v")
-		try(t, mw.SetImageFormat("JPEG"), "SetImageFormat: %v")
-		try(t, mw.WriteImage(path), "WriteImage: %v")
-		mw.Clear()
+
+		// try(t, go_save2jpeg(path, w, h, buffer))	// vanilla Go
+		try(t, im_save2jpeg(mw, path, w, h, buffer))	// ImageMagick
+
 		saved = append(saved, path)
 
 		// UNTIL HERE
@@ -107,13 +68,8 @@ func TestStart(t *testing.T) {
 	try(t, cam.Fetch(cb), "Fetch failed: %v")
 
 	if len(saved) > 0 {
-		i := len(saved) / 2
-		try(t, mw.ReadImage(saved[i]))
-		w := mw.GetImageWidth()
-		h := mw.GetImageHeight()
-		try(t, mw.ResizeImage(w/2, h/2, imagick.FILTER_LANCZOS, 1))
-		try(t, mw.SetImageCompressionQuality(75))
-		try(t, mw.DisplayImage(os.Getenv("DISPLAY")))
+		try(t, im_show(mw, saved[len(saved) / 2]),
+			"im_show(" + saved[len(saved) / 2] + "): %v")
 	}
 
 	if f, e := os.Open(imgPath); e != nil {
