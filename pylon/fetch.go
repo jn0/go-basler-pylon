@@ -43,7 +43,57 @@ func (cam *Camera) SetFetchCount(v uint) {
 	C.setFetchCount(C.uint(v))
 }
 
-func (cam *Camera) Fetch(cb func(w, h, pxt, size int, buffer []byte) int) error {
+/* Sample usage:
+
+import (
+	"fmt"
+	"time"
+	...
+)
+import "pylon"
+
+func do() {
+	cam := &pylon.Camera{}
+
+	if e := cam.AttachDevice(); e != nil { fmt.Fatalf("cam.AttachDevice(): %v", e); }
+	if e := cam.OpenCamera(); e != nil { fmt.Fatalf("cam.OpenCamera(): %v", e); }
+	defer cam.CloseCamera()
+	if e := cam.ConfigureCamera(); e != nil { fmt.Fatalf("cam.ConfigureCamera(): %v", e); }
+
+	var saved []string
+	const savePathPrefix = "/a/b/c/d"
+	const savePathSuffix = ".jpg"
+
+	FrameCallback := func(w, h, pxt, size int, buffer []byte) int {
+		pt := pylon.EPixelType(pxt)
+		fmt.Printf("FrameCallback(w=%#v, h=%#v, pt=%08x=%s, size=%#v, buffer=%#v...)\n",
+			   w, h, pxt, pt.String(), size, buffer[0])
+		t1 := time.Now()
+
+		path := createFilePath(savePathPrefix, t1, savePathSuffix)
+
+		if e := save2jpeg(path, w, h, buffer); e != nil {
+			fmt.Fatalf("Cannot save to %#v: %v", path, e)
+		}
+		saved = append(saved, path)
+
+		fmt.Printf("FrameCallback taken %v\n\n", time.Now().Sub(t1))
+		return 0
+	}
+
+	cam.SetFetchTimeout(5000) // ms
+	cam.SetFetchCount(10)
+
+	cb := pylon.FrameCallbackType(FrameCallback)
+
+	if e := cam.Fetch(cb); e != nil { fmt.Fatalf("Fetch failed: %v", e); }
+
+	if len(saved) > 0 {
+		// HANDLE SAVED FILES
+	}
+}
+*/
+func (cam *Camera) Fetch(cb func(w, h, pt, size int, buffer []byte) int) error {
 	idx := cbreg.Add(cb)
 	s := C.GoString(C.fetch(C.int(idx)));
 	if s != "" {
