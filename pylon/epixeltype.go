@@ -10,7 +10,24 @@ package pylon
 
 import "fmt"
 
-type EPixelType int
+type EPixelType uint32
+
+func NewEPixelType(class, bits, subtype int) EPixelType {
+	if class & ^0x0ff != 0 { panic("invalid class"); }
+	if bits & ^0x0ff != 0 { panic("invalid bit size"); }
+	if subtype & ^0x0ffff != 0 { panic("invalid subtype"); }
+	return EPixelType((class << 24) | (bits << 16) | subtype)
+}
+
+const ePixelType_UNDEFINED = -1 // as in the source
+
+const ePixelType_Class_MONO = 0x01
+const ePixelType_Class_COLOR = 0x02
+const ePixelType_Class_CUSTOM = 0x80
+
+const ePixelType_Valid_Class =	ePixelType_Class_MONO |
+				ePixelType_Class_COLOR |
+				ePixelType_Class_CUSTOM
 
 func (pt *EPixelType) String() string {
 	if !pt.IsValid() {
@@ -43,35 +60,27 @@ func (pt *EPixelType) ClassName() string {
 	return class
 }
 
+func (pt *EPixelType) Class() int { return int((*pt >> 24) & 0x0ff); }
+func (pt *EPixelType) Bits() int { return int((*pt >> 16) & 0x0ff); }
+func (pt *EPixelType) Type() int { return int(*pt & 0x0ffff); }
+
 func (pt *EPixelType) IsValid() bool {
-	class := int((*pt >> 24) & 0x0ff)
-	return pt.IsUndefined() || class & ^(0x01 | 0x02 | 0x80) == 0
+	return pt.IsUndefined() || pt.Class() & ^ePixelType_Valid_Class == 0
 }
 
 func (pt *EPixelType) IsMono() bool {
-	class := int((*pt >> 24) & 0x0ff)
-	return class & 0x01 == 0x01
+	return pt.Class() & ePixelType_Class_MONO == ePixelType_Class_MONO
 }
 
 func (pt *EPixelType) IsColor() bool {
-	class := int((*pt >> 24) & 0x0ff)
-	return class & 0x02 == 0x02
+	return pt.Class() & ePixelType_Class_COLOR == ePixelType_Class_COLOR
 }
 
 func (pt *EPixelType) IsCustom() bool {
-	class := int((*pt >> 24) & 0x0ff)
-	return class & 0x80 == 0x80
-}
-
-func (pt *EPixelType) Bits() int {
-	return int((*pt >> 16) & 0x0ff)
-}
-
-func (pt *EPixelType) Type() int {
-	return int(*pt & 0x0ffff)
+	return pt.Class() & ePixelType_Class_CUSTOM == ePixelType_Class_CUSTOM
 }
 
 func (pt *EPixelType) IsUndefined() bool {
-	return *pt == -1
+	return int(*pt) == ePixelType_UNDEFINED
 }
 
