@@ -77,13 +77,22 @@ func TestStart(t *testing.T) {
 
 		path := filepath.Join(imgPath, time2name(t1.UTC(), ".jpg"))
 		// try(t, go_save2jpeg(path, w, h, buffer))
+/*
+		var ii imagick.ImageInfo
+		var bg imagick.MagickPixelPacket
+		imagic.NewMagicImage(&ii, w, h, &bg)
+*/
+		mw.ResetIterator()
+		pw := imagick.NewPixelWand(); defer pw.Destroy()
+		t.Logf("SetColor(gray): %v", pw.SetColor("gray"))
+		try(t, mw.NewImage(uint(w), uint(h), pw), "NewImage: %v")
 		try(t, mw.ImportImagePixels(0, 0, // start
 					    uint(w), uint(h), // size
 					    "I", imagick.PIXEL_CHAR, // type
-					    buffer)) // data
-		mw.ResetIterator()
-		try(t, mw.SetImageFormat("JPEG"))
-		try(t, mw.WriteImage(path))
+					    buffer), // data
+		    "ImportImagePixels: %v")
+		try(t, mw.SetImageFormat("JPEG"), "SetImageFormat: %v")
+		try(t, mw.WriteImage(path), "WriteImage: %v")
 		mw.Clear()
 		saved = append(saved, path)
 
