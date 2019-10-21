@@ -14,21 +14,21 @@ import (
 
 func try(t *testing.T, e error, args ...string) {
 	if len(args) > 1 { panic("try(*testing.T, error[, \"format\"])"); }
-	format := "Failed with %v"
+	format := "Failed in %v"
 	if len(args) > 0 { format = args[0]; }
 	if e != nil { t.Fatalf(format, e); }
 }
 
-var JpegOptions = jpeg.Options{ Quality: jpeg.DefaultQuality } // sorta const, yeah
-
-func save2jpeg(path string, width, height int, data []byte) error {
+// save to JPEG using Go's builtin facility
+var GoJpegOptions = jpeg.Options{ Quality: jpeg.DefaultQuality } // sorta const, yeah
+func go_save2jpeg(path string, width, height int, data []byte) error {
 	a := image.NewGray(image.Rect(0, 0, width, height))
 	a.Pix = data
 
 	if of, e := os.Create(path); e != nil {
 		return fmt.Errorf("Cannot Create(%#v): %v", path, e)
 	} else {
-		e := jpeg.Encode(of, a, &JpegOptions)
+		e := jpeg.Encode(of, a, &GoJpegOptions)
 		of.Close()
 		if e != nil {
 			return fmt.Errorf("Cannot Encode() to %#v: %v", path, e)
@@ -45,6 +45,8 @@ func time2name(t time.Time, suffix string) string {
 
 func TestStart(t *testing.T) {
 	imagick.Initialize(); defer imagick.Terminate()
+	imName, imVer := imagick.GetVersion()
+	fmt.Printf("About to use ImageMagick %#v (%v)\n\n", imName, imVer)
 	mw := imagick.NewMagickWand(); defer mw.Destroy()
 
 	cam := &Camera{}
@@ -74,11 +76,19 @@ func TestStart(t *testing.T) {
 		// DO STUFF FROM HERE
 
 		path := filepath.Join(imgPath, time2name(t1.UTC(), ".jpg"))
-		try(t, save2jpeg(path, w, h, buffer))
+		// try(t, go_save2jpeg(path, w, h, buffer))
+		try(t, mw.ImportImagePixels(0, 0, // start
+					    uint(w), uint(h), // size
+					    "I", imagick.PIXEL_CHAR, // type
+					    buffer)) // data
+		mw.ResetIterator()
+		try(t, mw.SetImageFormat("JPEG"))
+		try(t, mw.WriteImage(path))
+		mw.Clear()
 		saved = append(saved, path)
 
 		// UNTIL HERE
-		fmt.Printf("FrameCallback taken %v\n", time.Now().Sub(t1))
+		fmt.Printf("FrameCallback taken %v\n\n", time.Now().Sub(t1))
 		return 0
 	}
 
