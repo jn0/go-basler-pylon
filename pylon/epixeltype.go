@@ -31,13 +31,17 @@ const ePixelType_Valid_Class =	ePixelType_Class_MONO |
 
 func (pt *EPixelType) String() string {
 	if !pt.IsValid() {
-		return fmt.Sprintf("<EPixelType(%08x)Invalid>", *pt)
+		return fmt.Sprintf("<EPixelType:INVALID:%08x>", *pt)
 	}
 	if pt.IsUndefined() {
 		return "<EPixelType:UNDEFINED>"
 	}
-	return fmt.Sprintf("<EPixelType:%s(%d)%04x>",
-			   pt.ClassName(), pt.Bits(), pt.Type())
+	v := PixelTypeName[*pt]
+	if v == "" {
+		return fmt.Sprintf("<EPixelType:UNSUPPORTED:%s(%d)%04x>",
+				   pt.ClassName(), pt.Bits(), pt.Type())
+	}
+	return fmt.Sprintf("<EPixelType:%s>", v)
 }
 
 func (pt *EPixelType) ClassName() string {

@@ -114,6 +114,97 @@ const (
     PixelType_Double             = EPixelType(eptCM|ept48|0x0100)
 )
 
+var PixelTypeName = map[EPixelType]string{
+    PixelType_Undefined: "Undefined",
+
+    PixelType_Mono8: "Mono8",
+    PixelType_Mono8signed: "Mono8signed",
+    PixelType_Mono10: "Mono10",
+    PixelType_Mono10packed: "Mono10packed",
+    PixelType_Mono10p: "Mono10p",
+    PixelType_Mono12: "Mono12",
+    PixelType_Mono12packed: "Mono12packed",
+    PixelType_Mono12p: "Mono12p",
+    PixelType_Mono16: "Mono16",
+
+    PixelType_BayerGR8: "BayerGR8",
+    PixelType_BayerRG8: "BayerRG8",
+    PixelType_BayerGB8: "BayerGB8",
+    PixelType_BayerBG8: "BayerBG8",
+
+    PixelType_Mono1packed: "Mono1packed",
+    PixelType_Mono2packed: "Mono2packed",
+    PixelType_Mono4packed: "Mono4packed",
+
+    PixelType_BayerGR10: "BayerGR10",
+    PixelType_BayerRG10: "BayerRG10",
+    PixelType_BayerGB10: "BayerGB10",
+    PixelType_BayerBG10: "BayerBG10",
+
+    PixelType_BayerGR12: "BayerGR12",
+    PixelType_BayerRG12: "BayerRG12",
+    PixelType_BayerGB12: "BayerGB12",
+    PixelType_BayerBG12: "BayerBG12",
+
+    PixelType_RGB8packed: "RGB8packed",
+    PixelType_BGR8packed: "BGR8packed",
+
+    PixelType_RGBA8packed: "RGBA8packed",
+    PixelType_BGRA8packed: "BGRA8packed",
+
+    PixelType_RGB10packed: "RGB10packed",
+    PixelType_BGR10packed: "BGR10packed",
+
+    PixelType_RGB12packed: "RGB12packed",
+    PixelType_BGR12packed: "BGR12packed",
+
+    PixelType_RGB16packed: "RGB16packed",
+
+    PixelType_BGR10V1packed: "BGR10V1packed",
+    PixelType_BGR10V2packed: "BGR10V2packed",
+
+    PixelType_YUV411packed: "YUV411packed",
+    PixelType_YUV422packed: "YUV422packed",
+    PixelType_YUV444packed: "YUV444packed",
+
+    PixelType_RGB8planar: "RGB8planar",
+    PixelType_RGB10planar: "RGB10planar",
+    PixelType_RGB12planar: "RGB12planar",
+    PixelType_RGB16planar: "RGB16planar",
+
+    PixelType_YUV422_YUYV_Packed: "YUV422_YUYV_Packed",
+    PixelType_YUV444planar: "YUV444planar",
+    PixelType_YUV422planar: "YUV422planar",
+    PixelType_YUV420planar: "YUV420planar",
+
+    PixelType_YCbCr422_8_YY_CbCr_Semiplanar: "YCbCr422_8_YY_CbCr_Semiplanar",
+    PixelType_YCbCr420_8_YY_CbCr_Semiplanar: "YCbCr420_8_YY_CbCr_Semiplanar",
+
+    PixelType_BayerGR12Packed: "BayerGR12Packed",
+    PixelType_BayerRG12Packed: "BayerRG12Packed",
+    PixelType_BayerGB12Packed: "BayerGB12Packed",
+    PixelType_BayerBG12Packed: "BayerBG12Packed",
+
+    PixelType_BayerGR10p: "BayerGR10p",
+    PixelType_BayerRG10p: "BayerRG10p",
+    PixelType_BayerGB10p: "BayerGB10p",
+    PixelType_BayerBG10p: "BayerBG10p",
+
+    PixelType_BayerGR12p: "BayerGR12p",
+    PixelType_BayerRG12p: "BayerRG12p",
+    PixelType_BayerGB12p: "BayerGB12p",
+    PixelType_BayerBG12p: "BayerBG12p",
+
+    PixelType_BayerGR16: "BayerGR16",
+    PixelType_BayerRG16: "BayerRG16",
+    PixelType_BayerGB16: "BayerGB16",
+    PixelType_BayerBG16: "BayerBG16",
+
+    PixelType_RGB12V1packed: "RGB12V1packed",
+
+    PixelType_Double: "Double",
+}
+
 // Returns true if the pixel type is Mono and the pixel values are not byte aligned.
 func IsMonoPacked(pixelType EPixelType) bool {
     switch pixelType {   	
