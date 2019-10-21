@@ -21,8 +21,9 @@ const imageJpegQuality = 75
 
 // im_save2jpeg: using ImageMagick
 func im_save2jpeg(mw *imagick.MagickWand, path string, width, height int, data []byte) error {
+	defer mw.Clear()
+
 	pw := imagick.NewPixelWand(); defer pw.Destroy()
-	/* t.Logf("SetColor(gray): %v", */  pw.SetColor("gray") //)
 
 	mw.ResetIterator()
 	if e := mw.NewImage(uint(width), uint(height), pw); e != nil {
@@ -34,9 +35,11 @@ func im_save2jpeg(mw *imagick.MagickWand, path string, width, height int, data [
 	  e != nil { return fmt.Errorf("ImportImagePixels: %v", e); }
 	if e := mw.SetImageFormat("JPEG"); e != nil {
 		return fmt.Errorf("SetImageFormat: %v", e); }
+	if e := mw.SetImageCompressionQuality(imageJpegQuality); e != nil {
+		return fmt.Errorf("SetImageCompressionQuality: %v", e)
+	}
 	if e := mw.WriteImage(path); e != nil {
 		return fmt.Errorf("WriteImage: %v", e); }
-	mw.Clear()
 	return nil
 }
 
@@ -56,6 +59,8 @@ func im_cleanup(mw *imagick.MagickWand) {
 
 // im_show: utility function to display an image
 func im_show(mw *imagick.MagickWand, path string) error {
+	defer mw.Clear()
+	fmt.Printf("Viewing %#v ...\n", path)
 	if e := mw.ReadImage(path); e != nil {
 		return fmt.Errorf("ReadImage(%#v): %v", path, e)
 	}
@@ -66,6 +71,15 @@ func im_show(mw *imagick.MagickWand, path string) error {
 	}
 	if e := mw.SetImageCompressionQuality(imageJpegQuality); e != nil {
 		return fmt.Errorf("SetImageCompressionQuality: %v", e)
+	}
+	fmt.Printf("Image identification: %s", mw.IdentifyImage())
+	var n int = 0
+	for i, v := range mw.GetImageProfiles("") {
+		fmt.Printf("[%#v]=%#v\n", i, v)
+		n++
+	}
+	if n == 0 {
+		fmt.Printf("Image has no profiles.\n")
 	}
 	if e := mw.DisplayImage(os.Getenv("DISPLAY")); e != nil {
 		return fmt.Errorf("DisplayImage(%#v): %v", os.Getenv("DISPLAY"), e)
