@@ -33,10 +33,38 @@ func im_save2jpeg(mw *imagick.MagickWand, path string, width, height int, data [
 				     "I", imagick.PIXEL_CHAR, // type
 				     data); // data
 	  e != nil { return fmt.Errorf("ImportImagePixels: %v", e); }
+	mw.ResetIterator()
 	if e := mw.SetImageFormat("JPEG"); e != nil {
 		return fmt.Errorf("SetImageFormat: %v", e); }
+	mw.ResetIterator()
 	if e := mw.SetImageCompressionQuality(imageJpegQuality); e != nil {
 		return fmt.Errorf("SetImageCompressionQuality: %v", e)
+	}
+	/*
+	if e := mw.SetOrientation(imagick.ORIENTATION_UNDEFINED); e != nil {
+		return fmt.Errorf("SetOrientation: %v", e)
+	}
+	*/
+	mw.ResetIterator()
+	var propNames = []string{
+		"EXIF:UserComment",
+		"EXIF:Photo.UserComment",
+		"EXIF:37510",
+		"EXIF:0x9286",
+		"exif:UserComment",
+		"exif:Photo.UserComment",
+		"exif:37510",
+		"exif:0x9286",
+		"UserComment",
+		"37510",
+		"0x9286",
+	}
+	const propValue string = "this is a sample user comment"
+	for _, pn := range propNames {
+		if e := mw.SetImageProperty(pn, propValue);
+			e != nil { fmt.Printf("SetImageProperty: %v", e); }
+		if e := mw.SetImageArtifact(pn, propValue);
+			e != nil { fmt.Printf("SetImageArtifact: %v", e); }
 	}
 	if e := mw.WriteImage(path); e != nil {
 		return fmt.Errorf("WriteImage: %v", e); }
@@ -74,12 +102,13 @@ func im_show(mw *imagick.MagickWand, path string) error {
 	}
 	fmt.Printf("Image identification: %s", mw.IdentifyImage())
 	var n int = 0
-	for i, v := range mw.GetImageProfiles("") {
-		fmt.Printf("[%#v]=%#v\n", i, v)
+	for i, a := range mw.GetImageArtifacts("") {
+		v := mw.GetImageProperty(a)
+		fmt.Printf("[%#v]=[%#v]=%#v\n", i, a, v)
 		n++
 	}
 	if n == 0 {
-		fmt.Printf("Image has no profiles.\n")
+		fmt.Printf("Image has no artifacts.\n")
 	}
 	if e := mw.DisplayImage(os.Getenv("DISPLAY")); e != nil {
 		return fmt.Errorf("DisplayImage(%#v): %v", os.Getenv("DISPLAY"), e)
