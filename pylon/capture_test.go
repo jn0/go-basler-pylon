@@ -22,7 +22,7 @@ func time2name(t time.Time, suffix string) string {
 }
 
 func TestStart(t *testing.T) {
-	mw := im_setup(); defer im_cleanup(mw)
+	// mw := im_setup(); defer im_cleanup(mw)
 
 	cam := &Camera{}
 	imgPath := path.Join(os.TempDir(), "go-basler-pylon-test")
@@ -52,8 +52,8 @@ func TestStart(t *testing.T) {
 
 		path := filepath.Join(imgPath, time2name(t1.UTC(), ".jpg"))
 
-		// try(t, go_save2jpeg(path, w, h, buffer))	// vanilla Go
-		try(t, im_save2jpeg(mw, path, w, h, buffer))	// ImageMagick
+		try(t, go_save2jpeg(path, w, h, buffer))	// vanilla Go
+		// try(t, im_save2jpeg(mw, path, w, h, buffer))	// ImageMagick
 
 		saved = append(saved, path)
 
@@ -66,12 +66,12 @@ func TestStart(t *testing.T) {
 	cam.SetFetchCount(10)
 	cb := FrameCallbackType(FrameCallback)
 	try(t, cam.Fetch(cb), "Fetch failed: %v")
-
+/*
 	if len(saved) > 0 {
 		try(t, im_show(mw, saved[len(saved) / 2]),
 			"im_show(" + saved[len(saved) / 2] + "): %v")
 	}
-
+*/
 	if f, e := os.Open(imgPath); e != nil {
 		t.Fatalf("os.Open(%#v) failed: %v", imgPath, e)
 	} else if n, e := f.Readdirnames(-1); e != nil {
