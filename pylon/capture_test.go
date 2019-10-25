@@ -1,3 +1,4 @@
+// Copyright(C) jno, 2019; License: MIT
 package pylon
 
 import (

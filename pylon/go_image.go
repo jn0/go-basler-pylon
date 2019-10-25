@@ -7,77 +7,14 @@ import (
 	"os"
 	"fmt"
 	"bytes"
-	"time"
 	"image"
 	"image/jpeg"
+	"time"
 	"github.com/dsoprea/go-exif"
-	"github.com/dsoprea/go-jpeg-image-structure"
 )
 
 // save to JPEG using Go's builtin facility
 var GoJpegOptions = jpeg.Options{ Quality: jpeg.DefaultQuality } // sorta const, yeah
-
-func blankIfdBuilder() (*exif.IfdBuilder, error) {
-	im := exif.NewIfdMapping()
-	if e := exif.LoadStandardIfds(im); e != nil {
-		return nil, fmt.Errorf("exif.LoadStandardIfds: %v", e)
-	}
-	ib := exif.NewIfdBuilder(
-		im,
-		exif.NewTagIndex(),
-		exif.IfdPathStandard,
-		exif.TestDefaultByteOrder,
-	)
-	return ib, nil
-}
-
-func makeExif(jpg []byte) ([]byte, error) {
-	jmp := jpegstructure.NewJpegMediaParser()
-
-	sl, e := jmp.ParseBytes(jpg)
-	if e != nil {
-		return nil, fmt.Errorf("Cannot ParseBytes: %v", e)
-	}
-	sl.Print()
-	rootIb, e := sl.ConstructExifBuilder()
-	if e != nil {
-		if e.Error() == "no exif data" {
-			rootIb, e = blankIfdBuilder()
-			if e != nil {
-				return nil, fmt.Errorf("blankIfdBuilder: %v", e)
-			}
-			e = sl.SetExif(rootIb)
-			if e != nil {
-				return nil, fmt.Errorf("sl.SetExif: %v", e)
-			}
-		} else {
-			return nil, fmt.Errorf("Cannot ConstructExifBuilder: %v", e)
-		}
-	}
-	ifdPath := "IFD0"
-	ifdIb, e := exif.GetOrCreateIbFromRootIb(rootIb, ifdPath)
-	if e != nil {
-		return nil, fmt.Errorf("Cannot GetOrCreateIbFromRootIb: %v", e)
-	}
-	//
-	now := time.Now().UTC()
-	e = ifdIb.SetStandardWithName("DateTime",
-					exif.ExifFullTimestampString(now))
-	if e != nil {
-		return nil, fmt.Errorf("Cannot SetStandardWithName: %v", e)
-	}
-	//
-	e = sl.SetExif(rootIb)
-	if e != nil {
-		return nil, fmt.Errorf("Cannot SetExif: %v", e)
-	}
-	buf := new(bytes.Buffer)
-	e = sl.Write(buf)
-	if e != nil {
-		return nil, fmt.Errorf("Cannot sl.Write: %v", e)
-	}
-	return buf.Bytes(), nil
-}
 
 func writeTo(path string, data []byte) error {
 	of, e := os.Create(path)
@@ -91,6 +28,39 @@ func writeTo(path string, data []byte) error {
 				len(data), path, e)
 	}
 	return nil
+}
+
+// makeExif(jpegData) --> (exifData, error)
+func makeExif(jpg []byte) ([]byte, error) {
+	var tagList = ExifTagList{
+		&ExifTag{
+			Path: "IFD0",
+			Name: "DateTime",
+			Value: exif.ExifFullTimestampString(time.Now().UTC()),
+		},
+		&ExifTag{
+			Path: "IFD/Exif",
+			Name: "UserComment",
+			Value: exif.TagUnknownType_9298_UserComment{
+				EncodingType: exif.TagUnknownType_9298_UserComment_Encoding_ASCII,
+				EncodingBytes: []byte("TEST COMMENT"),
+			},
+		},
+	}
+
+	if injector, e := NewExifInjector(jpg); e != nil {
+		return nil, fmt.Errorf("NewExifInjector: %v", e)
+	} else {
+		injector.AddTagList(&tagList)
+
+		if e = injector.Inject(); e != nil {
+			return nil, fmt.Errorf("Cannot Inject: %v", e)
+		}
+
+		return injector.Jpeg, nil
+	}
+
+	return nil, nil
 }
 
 // go_save2jpeg: native Go implementation
