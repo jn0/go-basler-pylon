@@ -10,7 +10,7 @@
  *
  */
 package pylon
-
+/*
 import (
 	"os"
 	"fmt"
@@ -40,11 +40,9 @@ func im_save2jpeg(mw *imagick.MagickWand, path string, width, height int, data [
 	if e := mw.SetImageCompressionQuality(imageJpegQuality); e != nil {
 		return fmt.Errorf("SetImageCompressionQuality: %v", e)
 	}
-	/*
-	if e := mw.SetOrientation(imagick.ORIENTATION_UNDEFINED); e != nil {
-		return fmt.Errorf("SetOrientation: %v", e)
-	}
-	*/
+//	if e := mw.SetOrientation(imagick.ORIENTATION_UNDEFINED); e != nil {
+//		return fmt.Errorf("SetOrientation: %v", e)
+//	}
 	mw.ResetIterator()
 	var propNames = []string{
 		"EXIF:UserComment",
@@ -115,5 +113,5 @@ func im_show(mw *imagick.MagickWand, path string) error {
 	}
 	return nil
 }
-
+*/
 /* EOF */
