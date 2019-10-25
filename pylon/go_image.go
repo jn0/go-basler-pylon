@@ -109,33 +109,33 @@ func makeExif(jpg []byte) ([]byte, error) {
 	if err != nil { panic("No host name!"); }
 
 	var tagList = ExifTagList{
-		StringExifTag("IFD0", "DateTime",
+		StringExifTag("", "DateTime",
 			exif.ExifFullTimestampString(time.Now().UTC())),
-		StringExifTag("IFD0", "Copyright",
+		StringExifTag("", "Copyright",
 		  "Copyright, Inbase of Nekst LLC, 2019. All rights reserved."),
-		StringExifTag("IFD0", "Make", "Inbase"),
-		StringExifTag("IFD0", "Model", "Upyr1"),
-		StringExifTag("IFD0", "Software", "U1 by Inbase"),
-		StringExifTag("IFD0", "Artist", "Inbase Upyr1 Bot"),
-		StringExifTag("IFD0", "HostComputer", hostname),
+		StringExifTag("", "Make", "Inbase"),
+		StringExifTag("", "Model", "Upyr1"),
+		StringExifTag("", "Software", "U1 by Inbase"),
+		StringExifTag("", "Artist", "Inbase Upyr1 Bot"),
+		StringExifTag("", "HostComputer", hostname),
 
-		UserCommentExifTag("IFD/Exif", "UserComment", "TEST COMMENT"),
+		UserCommentExifTag("", "UserComment", "TEST COMMENT"),
 
-		RationalExifTag("IFD0", "ExposureTime", 1, 350),
-		RationalExifTag("IFD0", "FNumber", 14, 10),
+		RationalExifTag("", "ExposureTime", 1, 350),
+		RationalExifTag("", "FNumber", 14, 10),
 
-		ShortExifTag("IFD/Exif", "ColorSpace", 65535),
-		ShortExifTag("IFD/Exif", "Sharpness", 0),
-		ShortExifTag("IFD/Exif", "SubjectDistanceRange", 3),
-		ShortExifTag("IFD/Exif", "ISOSpeedRatings", 2),
-		SRationalExifTag("IFD/Exif", "ShutterSpeedValue", 12287712, 1000000),
-		RationalExifTag("IFD/Exif", "ApertureValue", 1, 1),
-		RationalExifTag("IFD/Exif", "FocalLength", 25, 1),
+		ShortExifTag("", "ColorSpace", 65535),
+		ShortExifTag("", "Sharpness", 0),
+		ShortExifTag("", "SubjectDistanceRange", 3),
+		ShortExifTag("", "ISOSpeedRatings", 2),
+		SRationalExifTag("", "ShutterSpeedValue", 12287712, 1000000),
+		RationalExifTag("", "ApertureValue", 1, 1),
+		RationalExifTag("", "FocalLength", 25, 1),
 
-		StringExifTag("IFD/GPSInfo", "GPSLatitudeRef", "N"),
-		RationalExifTag("IFD/GPSInfo", "GPSLatitude", 5575564, 100000),
-		StringExifTag("IFD/GPSInfo", "GPSLongitudeRef", "E"),
-		RationalExifTag("IFD/GPSInfo", "GPSLongitude", 3756544, 100000),
+		StringExifTag("", "GPSLatitudeRef", "N"),
+		RationalExifTag("", "GPSLatitude", 5575564, 100000),
+		StringExifTag("", "GPSLongitudeRef", "E"),
+		RationalExifTag("", "GPSLongitude", 3756544, 100000),
 	}
 
 	if injector, e := NewExifInjector(jpg); e != nil {

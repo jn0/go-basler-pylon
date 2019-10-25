@@ -10,14 +10,39 @@ import (
 	"github.com/dsoprea/go-jpeg-image-structure"
 )
 
+var refTagIndex = exif.NewTagIndex()
+var standardIfdPathes = []string{
+	exif.IfdPathStandard,
+	exif.IfdPathStandardExif,
+	exif.IfdPathStandardExifIop,
+	exif.IfdPathStandardGps,
+}
+
+// attempts to find a suitable `path` for `name`
+func name2path(name string) (string, error) {
+	for _, path := range standardIfdPathes {
+		_, err := refTagIndex.GetWithName(path, name)
+		if err == nil {
+			return path, nil
+		}
+	}
+	return "", fmt.Errorf("No default path for %+q", name)
+}
+
 /* types to carry lists of EXIF tags to be injected */
 type ExifTag struct {
 	Path string
 	Name string
 	Value interface{}
 }
+// empty ("") `path` means "search for path yourself"
 func NewExifTag(path, name string, value interface{}) *ExifTag {
+	var e error
 	tag := new(ExifTag)
+	if path == "" {
+		path, e = name2path(name)
+		if e != nil { panic(e); }
+	}
 	tag.Path = path
 	tag.Name = name
 	tag.Value = value
