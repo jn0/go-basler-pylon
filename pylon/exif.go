@@ -24,6 +24,32 @@ func NewExifTag(path, name string, value interface{}) *ExifTag {
 	return tag
 }
 
+func StringExifTag(path, name string, value string) *ExifTag {
+	return NewExifTag(path, name, value)
+}
+
+func UserCommentExifTag(path, name string, value string) *ExifTag {
+	v := exif.TagUnknownType_9298_UserComment{
+		EncodingType: exif.TagUnknownType_9298_UserComment_Encoding_ASCII,
+		EncodingBytes: []byte(value),
+	}
+	return NewExifTag(path, name, v)
+}
+
+func ShortExifTag(path, name string, value uint16) *ExifTag {
+	return NewExifTag(path, name, []uint16{uint16(value)})
+}
+
+func RationalExifTag(path, name string, num uint32, den uint32) *ExifTag {
+	v := exif.Rational{Numerator: num, Denominator: den}
+	return NewExifTag(path, name, []exif.Rational{v})
+}
+
+func SRationalExifTag(path, name string, num int32, den int32) *ExifTag {
+	v := exif.SignedRational{Numerator: num, Denominator: den}
+	return NewExifTag(path, name, []exif.SignedRational{v})
+}
+
 type ExifTagList []*ExifTag
 
 /* "class" to handle EXIF data and insertion of tags */
