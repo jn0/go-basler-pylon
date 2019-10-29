@@ -6,10 +6,13 @@ package pylon
 import (
 	"fmt"
 	"bytes"
+	"time"
+	"encoding/binary"
 	"github.com/dsoprea/go-exif"
 	"github.com/dsoprea/go-jpeg-image-structure"
 )
 
+var ByteOrder = binary.LittleEndian // binary.BigEndian // == exif.TestDefaultByteOrder
 var refTagIndex = exif.NewTagIndex()
 var standardIfdPathes = []string{
 	exif.IfdPathStandard,
@@ -49,30 +52,48 @@ func NewExifTag(path, name string, value interface{}) *ExifTag {
 	return tag
 }
 
+func TimestampExifTagValue(value time.Time) string {
+	return exif.ExifFullTimestampString(value)
+}
+func StringExifTagValue(value string) string {
+	return value
+}
 func StringExifTag(path, name string, value string) *ExifTag {
-	return NewExifTag(path, name, value)
+	return NewExifTag(path, name, StringExifTagValue(value))
 }
 
-func UserCommentExifTag(path, name string, value string) *ExifTag {
+func UserCommentExifTagValue(value string) exif.TagUnknownType_9298_UserComment {
 	v := exif.TagUnknownType_9298_UserComment{
 		EncodingType: exif.TagUnknownType_9298_UserComment_Encoding_ASCII,
 		EncodingBytes: []byte(value),
 	}
-	return NewExifTag(path, name, v)
+	return v
+}
+func UserCommentExifTag(path, name string, value string) *ExifTag {
+	return NewExifTag(path, name, UserCommentExifTagValue(value))
 }
 
+func ShortExifTagValue(value uint16) []uint16 {
+	return []uint16{uint16(value)}
+}
 func ShortExifTag(path, name string, value uint16) *ExifTag {
-	return NewExifTag(path, name, []uint16{uint16(value)})
+	return NewExifTag(path, name, ShortExifTagValue(value))
 }
 
+func RationalExifTagValue(num uint32, den uint32) []exif.Rational {
+	v := []exif.Rational{exif.Rational{Numerator: num, Denominator: den}}
+	return v
+}
 func RationalExifTag(path, name string, num uint32, den uint32) *ExifTag {
-	v := exif.Rational{Numerator: num, Denominator: den}
-	return NewExifTag(path, name, []exif.Rational{v})
+	return NewExifTag(path, name, RationalExifTagValue(num, den))
 }
 
-func SRationalExifTag(path, name string, num int32, den int32) *ExifTag {
+func SRationalExifTagValue(num int32, den int32) []exif.SignedRational {
 	v := exif.SignedRational{Numerator: num, Denominator: den}
-	return NewExifTag(path, name, []exif.SignedRational{v})
+	return []exif.SignedRational{v}
+}
+func SRationalExifTag(path, name string, num int32, den int32) *ExifTag {
+	return NewExifTag(path, name, SRationalExifTagValue(num, den))
 }
 
 type ExifTagList []*ExifTag
@@ -95,7 +116,7 @@ func (self *ExifInjector) blankRootIfdBuilder() error {
 		im,
 		exif.NewTagIndex(),
 		exif.IfdPathStandard,
-		exif.TestDefaultByteOrder,
+		ByteOrder,
 	)
 	return nil
 }
@@ -142,6 +163,12 @@ func (self *ExifInjector) AddTagList(list *ExifTagList) {
 		self.Tags = append(self.Tags, tag)
 	}
 }
+func (self *ExifInjector) AddTags(list map[string]interface{}) {
+	for name, value := range list {
+		tag := NewExifTag("", name, value)
+		self.Tags = append(self.Tags, tag)
+	}
+}
 func (self *ExifInjector) setTag(path, name string, value interface{}) error {
 	if ifdIb, e := exif.GetOrCreateIbFromRootIb(self.rootIb, path); e != nil {
 		return fmt.Errorf("Cannot GetOrCreateIbFromRootIb(*, %q): %v", path, e)
@@ -171,13 +198,17 @@ func (self *ExifInjector) Inject() error {
 	}
 	self.Jpeg = buf.Bytes()
 
+	fmt.Println("EXIF added:")
 	self.sl.Print()
+	// self.sl.Validate(???)
 	return nil
 }
 // NewExifInjector: constructor; I don't want to see uninitialized injectors
 func NewExifInjector(data []byte) (*ExifInjector, error) {
 	ei := new(ExifInjector)
 	err := ei.LoadBytes(data)
+	fmt.Println("Loaded:")
+	ei.sl.Print()
 	return ei, err
 }
 

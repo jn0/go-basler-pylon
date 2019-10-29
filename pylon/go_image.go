@@ -10,7 +10,6 @@ import (
 	"image"
 	"image/jpeg"
 	"time"
-	"github.com/dsoprea/go-exif"
 )
 
 // save to JPEG using Go's builtin facility
@@ -108,7 +107,8 @@ func makeExif(jpg []byte) ([]byte, error) {
 	hostname, err := os.Hostname()
 	if err != nil { panic("No host name!"); }
 
-	var tagList = ExifTagList{
+/*
+	var tagList = ExifTagList{ // use injector.AddTagList(&tagList)
 		StringExifTag("", "DateTime",
 			exif.ExifFullTimestampString(time.Now().UTC())),
 		StringExifTag("", "Copyright",
@@ -137,11 +137,42 @@ func makeExif(jpg []byte) ([]byte, error) {
 		StringExifTag("", "GPSLongitudeRef", "E"),
 		RationalExifTag("", "GPSLongitude", 3756544, 100000),
 	}
+*/
+
+	var tags = map[string]interface{}{ // use injector.AddTags(tags)
+		"DateTime": TimestampExifTagValue(time.Now().UTC()),
+		"Copyright": StringExifTagValue(
+		  "Copyright, Inbase of Nekst LLC, 2019. All rights reserved."),
+		"Make": StringExifTagValue("Inbase"),
+		"Model": StringExifTagValue("Upyr1"),
+		"Software": StringExifTagValue("U1 by Inbase"),
+		"Artist": StringExifTagValue("Inbase Upyr1 Bot"),
+		"HostComputer": StringExifTagValue(hostname),
+
+		"UserComment": UserCommentExifTagValue("TEST COMMENT"),
+
+		"ExposureTime": RationalExifTagValue(1, 350),
+		"FNumber": RationalExifTagValue(14, 10),
+
+		"ColorSpace": ShortExifTagValue(65535),
+		"Sharpness": ShortExifTagValue(0),
+		"SubjectDistanceRange": ShortExifTagValue(3),
+		"ISOSpeedRatings": ShortExifTagValue(2),
+		"ShutterSpeedValue": SRationalExifTagValue(12287712, 1000000),
+		"ApertureValue": RationalExifTagValue(1, 1),
+		"FocalLength": RationalExifTagValue(25, 1),
+
+		"GPSLatitudeRef": StringExifTagValue("N"),
+		"GPSLatitude": RationalExifTagValue(5575564, 100000),
+		"GPSLongitudeRef": StringExifTagValue("E"),
+		"GPSLongitude": RationalExifTagValue(3756544, 100000),
+	}
 
 	if injector, e := NewExifInjector(jpg); e != nil {
 		return nil, fmt.Errorf("NewExifInjector: %v", e)
 	} else {
-		injector.AddTagList(&tagList)
+		// injector.AddTagList(&tagList)
+		injector.AddTags(tags)
 
 		if e = injector.Inject(); e != nil {
 			return nil, fmt.Errorf("Cannot Inject: %v", e)
