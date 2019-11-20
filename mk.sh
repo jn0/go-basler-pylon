@@ -4,21 +4,17 @@ PYLON_PATH=/opt/pylon5
 
 # HW libs available: /opt/pylon5/lib64/libpylon_TL_{bcon,camemu,gige,usb}.so
 libs=(
-	pylonc 
-	pylonbase 
-	pylon_TL_usb    # FIX here for other HW
-	pylonutility 
-	GenApi_gcc_v3_1_Basler_pylon 
-	GCBase_gcc_v3_1_Basler_pylon
+	-lpylonc 
+	-lpylonbase 
+	-lpylon_TL_usb    # FIX here for other HW
+	-lpylonutility 
+	-lGenApi_gcc_v3_1_Basler_pylon 
+	-lGCBase_gcc_v3_1_Basler_pylon
 )
 
 CPATH=${PYLON_PATH}/include/
 CGO_CPPFLAGS=-I${CPATH}
-
-CGO_LDFLAGS="-L${PYLON_PATH}/lib64 -L."
-CGO_LDFLAGS+=" -Wl,--start-group"
-for lib in "${libs[@]}"; do CGO_LDFLAGS+=" -l$lib"; done
-CGO_LDFLAGS+=' -Wl,--end-group'
+CGO_LDFLAGS="-L${PYLON_PATH}/lib64 -L. -Wl,--start-group ${libs[@]} -Wl,--end-group"
 
 cmd=test                    # defaults to test run
 if [ -n "$1" ]; then
