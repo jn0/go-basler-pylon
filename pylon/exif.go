@@ -29,7 +29,7 @@ func name2path(name string) (string, error) {
 			return path, nil
 		}
 	}
-	return "", fmt.Errorf("No default path for %+q", name)
+	return "", newError("No default path for %+q", name)
 }
 
 /* types to carry lists of EXIF tags to be injected */
@@ -110,7 +110,7 @@ type ExifInjector struct {
 func (self *ExifInjector) blankRootIfdBuilder() error {
 	im := exif.NewIfdMapping()
 	if e := exif.LoadStandardIfds(im); e != nil {
-		return fmt.Errorf("exif.LoadStandardIfds: %v", e)
+		return newError("exif.LoadStandardIfds: %v", e)
 	}
 	self.rootIb = exif.NewIfdBuilder(
 		im,
@@ -124,10 +124,10 @@ func (self *ExifInjector) makeRootIfdBuilder() error {
 	if ib, e := self.sl.ConstructExifBuilder(); e != nil {
 		if e.Error() == "no exif data" { // our case: new image has no EXIF!
 			if e := self.blankRootIfdBuilder(); e != nil {
-				return fmt.Errorf("blankIfdBuilder: %v", e)
+				return newError("blankIfdBuilder: %v", e)
 			}
 		} else {
-			return fmt.Errorf("ConstructExifBuilder: %v", e)
+			return newError("ConstructExifBuilder: %v", e)
 		}
 	} else {
 		self.rootIb = ib
@@ -144,11 +144,11 @@ func (self *ExifInjector) LoadBytes(data []byte) error {
 
 	self.sl, e = self.jmp.ParseBytes(self.Jpeg)
 	if e != nil {
-		return fmt.Errorf("ParseBytes: %v", e)
+		return newError("ParseBytes: %v", e)
 	}
 	e = self.makeRootIfdBuilder()
 	if e != nil {
-		return fmt.Errorf("makeRootIfdBuilder: %v", e)
+		return newError("makeRootIfdBuilder: %v", e)
 	}
 	return nil
 }
@@ -171,9 +171,9 @@ func (self *ExifInjector) AddTags(list map[string]interface{}) {
 }
 func (self *ExifInjector) setTag(path, name string, value interface{}) error {
 	if ifdIb, e := exif.GetOrCreateIbFromRootIb(self.rootIb, path); e != nil {
-		return fmt.Errorf("Cannot GetOrCreateIbFromRootIb(*, %q): %v", path, e)
+		return newError("Cannot GetOrCreateIbFromRootIb(*, %q): %v", path, e)
 	} else if e = ifdIb.SetStandardWithName(name, value); e != nil {
-		return fmt.Errorf("Cannot SetStandardWithName(%q, %+v): %v", name, value, e)
+		return newError("Cannot SetStandardWithName(%q, %+v): %v", name, value, e)
 	}
 	return nil
 }
@@ -183,18 +183,18 @@ func (self *ExifInjector) Inject() error {
 
 	for _, tag := range self.Tags {
 		if e = self.setTag(tag.Path, tag.Name, tag.Value); e != nil {
-			return fmt.Errorf("Cannot setTag(*, %q, %q, %+v): %v",
+			return newError("Cannot setTag(*, %q, %q, %+v): %v",
 					tag.Path, tag.Name, tag.Value, e)
 		}
 	}
 
 	if e = self.sl.SetExif(self.rootIb); e != nil {
-		return fmt.Errorf("Cannot SetExif: %v", e)
+		return newError("Cannot SetExif: %v", e)
 	}
 
 	buf := new(bytes.Buffer)
 	if e = self.sl.Write(buf); e != nil {
-		return fmt.Errorf("Cannot sl.Write: %v", e)
+		return newError("Cannot sl.Write: %v", e)
 	}
 	self.Jpeg = buf.Bytes()
 

@@ -97,7 +97,7 @@ func (cam *Camera) Fetch(cb func(w, h, pt, size int, buffer []byte) int) error {
 	idx := cbreg.Add(cb)
 	s := C.GoString(C.fetch(C.int(idx)));
 	if s != "" {
-		return fmt.Errorf("Fetch: %v", s)
+		return newError("Fetch: %v", s)
 	}
 	return nil
 }

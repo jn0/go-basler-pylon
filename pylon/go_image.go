@@ -12,18 +12,20 @@ import (
 	"time"
 )
 
+const JpegFileSuffix = ".jpg"
+
 // save to JPEG using Go's builtin facility
 var GoJpegOptions = jpeg.Options{ Quality: jpeg.DefaultQuality } // sorta const, yeah
 
 func writeTo(path string, data []byte) error {
 	of, e := os.Create(path)
 	if e != nil {
-		return fmt.Errorf("Cannot Create(%#v): %v", path, e)
+		return newError("Cannot Create(%#v): %v", path, e)
 	}
 	defer of.Close()
 	_, e = of.Write(data)
 	if e != nil {
-		return fmt.Errorf("Cannot Write(...%d...) to %q: %v",
+		return newError("Cannot Write(...%d...) to %q: %v",
 				len(data), path, e)
 	}
 	return nil
@@ -107,39 +109,8 @@ func makeExif(jpg []byte) ([]byte, error) {
 	hostname, err := os.Hostname()
 	if err != nil { panic("No host name!"); }
 
-/*
-	var tagList = ExifTagList{ // use injector.AddTagList(&tagList)
-		StringExifTag("", "DateTime",
-			exif.ExifFullTimestampString(time.Now().UTC())),
-		StringExifTag("", "Copyright",
-		  "Copyright, Inbase of Nekst LLC, 2019. All rights reserved."),
-		StringExifTag("", "Make", "Inbase"),
-		StringExifTag("", "Model", "Upyr1"),
-		StringExifTag("", "Software", "U1 by Inbase"),
-		StringExifTag("", "Artist", "Inbase Upyr1 Bot"),
-		StringExifTag("", "HostComputer", hostname),
 
-		UserCommentExifTag("", "UserComment", "TEST COMMENT"),
-
-		RationalExifTag("", "ExposureTime", 1, 350),
-		RationalExifTag("", "FNumber", 14, 10),
-
-		ShortExifTag("", "ColorSpace", 65535),
-		ShortExifTag("", "Sharpness", 0),
-		ShortExifTag("", "SubjectDistanceRange", 3),
-		ShortExifTag("", "ISOSpeedRatings", 2),
-		SRationalExifTag("", "ShutterSpeedValue", 12287712, 1000000),
-		RationalExifTag("", "ApertureValue", 1, 1),
-		RationalExifTag("", "FocalLength", 25, 1),
-
-		StringExifTag("", "GPSLatitudeRef", "N"),
-		RationalExifTag("", "GPSLatitude", 5575564, 100000),
-		StringExifTag("", "GPSLongitudeRef", "E"),
-		RationalExifTag("", "GPSLongitude", 3756544, 100000),
-	}
-*/
-
-	var tags = map[string]interface{}{ // use injector.AddTags(tags)
+	var tags = map[string]interface{}{
 		"DateTime": TimestampExifTagValue(time.Now().UTC()),
 		"Copyright": StringExifTagValue(
 		  "Copyright, Inbase of Nekst LLC, 2019. All rights reserved."),
@@ -169,13 +140,13 @@ func makeExif(jpg []byte) ([]byte, error) {
 	}
 
 	if injector, e := NewExifInjector(jpg); e != nil {
-		return nil, fmt.Errorf("NewExifInjector: %v", e)
+		return nil, newError("NewExifInjector: %v", e)
 	} else {
 		// injector.AddTagList(&tagList)
 		injector.AddTags(tags)
 
 		if e = injector.Inject(); e != nil {
-			return nil, fmt.Errorf("Cannot Inject: %v", e)
+			return nil, newError("Cannot Inject: %v", e)
 		}
 
 		return injector.Jpeg, nil
@@ -185,39 +156,31 @@ func makeExif(jpg []byte) ([]byte, error) {
 }
 
 // go_save2jpeg: native Go implementation
-func go_save2jpeg(path string, width, height int, data []byte) error {
-	var e error
-	a := image.NewGray(image.Rect(0, 0, width, height))
-	a.Pix = data
-
-	/*
-	e = jpeg.Encode(of, a, &GoJpegOptions)
-	if e != nil {
-		return fmt.Errorf("Cannot Encode() to %#v: %v", path, e)
-	}
-	*/
+func go_save2jpeg(path string, width, height int, data []byte) (e error) {
+	raw := image.NewGray(image.Rect(0, 0, width, height))
+	raw.Pix = data
 
 	var tmp bytes.Buffer
-	e = jpeg.Encode(&tmp, a, &GoJpegOptions)
+	e = jpeg.Encode(&tmp, raw, &GoJpegOptions)
 	if e != nil {
-		return fmt.Errorf("Cannot Encode(): %v", e)
+		return newError("Cannot Encode(): %v", e)
 	}
 	jpg := tmp.Bytes()
 
-	exif, e := makeExif(jpg)
+	jfif, e := makeExif(jpg)
 	if e != nil {
-		return fmt.Errorf("Cannot makeExif(): %v", e)
+		return newError("Cannot makeExif(): %v", e)
 	}
-	fmt.Printf("exif(%d): %v\n", len(exif), exif[:32])
+	fmt.Printf("jfif(%d): %v\n", len(jfif), jfif[:32])
 
 	e = writeTo(path, jpg)
 	if e != nil {
-		return fmt.Errorf("Cannot writeTo(%q): %v", path, e)
+		return newError("Cannot writeTo(%q): %v", path, e)
 	}
 
-	e = writeTo(path + ".jpg", exif)
+	e = writeTo(path + JpegFileSuffix, jfif)
 	if e != nil {
-		return fmt.Errorf("Cannot writeTo(%q): %v", path + ".jpg", e)
+		return newError("Cannot writeTo(%q): %v", path + JpegFileSuffix, e)
 	}
 
 	fmt.Printf("Written to %#v\n", path)

@@ -27,21 +27,21 @@ func im_save2jpeg(mw *imagick.MagickWand, path string, width, height int, data [
 
 	mw.ResetIterator()
 	if e := mw.NewImage(uint(width), uint(height), pw); e != nil {
-		return fmt.Errorf("NewImage: %v", e); }
+		return newError("NewImage: %v", e); }
 	if e := mw.ImportImagePixels(0, 0, // start
 				     uint(width), uint(height), // size
 				     "I", imagick.PIXEL_CHAR, // type
 				     data); // data
-	  e != nil { return fmt.Errorf("ImportImagePixels: %v", e); }
+	  e != nil { return newError("ImportImagePixels: %v", e); }
 	mw.ResetIterator()
 	if e := mw.SetImageFormat("JPEG"); e != nil {
-		return fmt.Errorf("SetImageFormat: %v", e); }
+		return newError("SetImageFormat: %v", e); }
 	mw.ResetIterator()
 	if e := mw.SetImageCompressionQuality(imageJpegQuality); e != nil {
-		return fmt.Errorf("SetImageCompressionQuality: %v", e)
+		return newError("SetImageCompressionQuality: %v", e)
 	}
 //	if e := mw.SetOrientation(imagick.ORIENTATION_UNDEFINED); e != nil {
-//		return fmt.Errorf("SetOrientation: %v", e)
+//		return newError("SetOrientation: %v", e)
 //	}
 	mw.ResetIterator()
 	var propNames = []string{
@@ -65,7 +65,7 @@ func im_save2jpeg(mw *imagick.MagickWand, path string, width, height int, data [
 			e != nil { fmt.Printf("SetImageArtifact: %v", e); }
 	}
 	if e := mw.WriteImage(path); e != nil {
-		return fmt.Errorf("WriteImage: %v", e); }
+		return newError("WriteImage: %v", e); }
 	return nil
 }
 
@@ -88,15 +88,15 @@ func im_show(mw *imagick.MagickWand, path string) error {
 	defer mw.Clear()
 	fmt.Printf("Viewing %#v ...\n", path)
 	if e := mw.ReadImage(path); e != nil {
-		return fmt.Errorf("ReadImage(%#v): %v", path, e)
+		return newError("ReadImage(%#v): %v", path, e)
 	}
 	w := mw.GetImageWidth()
 	h := mw.GetImageHeight()
 	if e := mw.ResizeImage(w/2, h/2, imagick.FILTER_LANCZOS, 1); e != nil {
-		return fmt.Errorf("ResizeImage: %v", e)
+		return newError("ResizeImage: %v", e)
 	}
 	if e := mw.SetImageCompressionQuality(imageJpegQuality); e != nil {
-		return fmt.Errorf("SetImageCompressionQuality: %v", e)
+		return newError("SetImageCompressionQuality: %v", e)
 	}
 	fmt.Printf("Image identification: %s", mw.IdentifyImage())
 	var n int = 0
@@ -109,7 +109,7 @@ func im_show(mw *imagick.MagickWand, path string) error {
 		fmt.Printf("Image has no artifacts.\n")
 	}
 	if e := mw.DisplayImage(os.Getenv("DISPLAY")); e != nil {
-		return fmt.Errorf("DisplayImage(%#v): %v", os.Getenv("DISPLAY"), e)
+		return newError("DisplayImage(%#v): %v", os.Getenv("DISPLAY"), e)
 	}
 	return nil
 }
