@@ -32,12 +32,17 @@ func name2path(name string) (string, error) {
 	return "", newError("No default path for %+q", name)
 }
 
-/* types to carry lists of EXIF tags to be injected */
+/*******************************************************************************
+ * types to carry lists of EXIF tags to be injected
+ */
 type ExifTag struct {
 	Path string
 	Name string
 	Value interface{}
 }
+
+type ExifTagList []*ExifTag
+
 // empty ("") `path` means "search for path yourself"
 func NewExifTag(path, name string, value interface{}) *ExifTag {
 	var e error
@@ -95,8 +100,7 @@ func SRationalExifTagValue(num int32, den int32) []exif.SignedRational {
 func SRationalExifTag(path, name string, num int32, den int32) *ExifTag {
 	return NewExifTag(path, name, SRationalExifTagValue(num, den))
 }
-
-type ExifTagList []*ExifTag
+/******************************************************************************/
 
 /* "class" to handle EXIF data and insertion of tags */
 type ExifInjector struct {
@@ -106,6 +110,7 @@ type ExifInjector struct {
 	jmp *jpegstructure.JpegMediaParser
 	sl *jpegstructure.SegmentList
 	rootIb *exif.IfdBuilder
+	dqt map[int]*jpegstructure.Segment
 }
 func (self *ExifInjector) blankRootIfdBuilder() error {
 	im := exif.NewIfdMapping()
@@ -134,6 +139,48 @@ func (self *ExifInjector) makeRootIfdBuilder() error {
 	}
 	return nil
 }
+// sometimes the library just loose DQT...
+func (self *ExifInjector) saveDQT() {
+	for i, seg := range self.sl.Segments() {
+		if seg.MarkerId == jpegstructure.MARKER_DQT {
+			if self.dqt == nil {
+				self.dqt = make(map[int]*jpegstructure.Segment)
+			}
+			self.dqt[i] = seg
+		}
+	}
+}
+func (self *ExifInjector) hasSavedDQT() bool {
+	return self.dqt != nil && len(self.dqt) > 0
+}
+// do we still have a DQT?
+func (self *ExifInjector) HasDQT() bool {
+	for _, seg := range self.sl.Segments() {
+		if seg.MarkerId == jpegstructure.MARKER_DQT {
+			return true
+		}
+	}
+	return false
+}
+func (self *ExifInjector) restoreDQT() {
+	if !self.HasDQT() {
+		if !self.hasSavedDQT() {
+			panic("I have no saved DQT to restore from!")
+		}
+		xsl := jpegstructure.NewSegmentList([]*jpegstructure.Segment{})
+		for i, seg := range self.sl.Segments() {
+			if self.hasSavedDQT() {
+				xs, found := self.dqt[i]
+				if found  {
+					xsl.Add(xs)
+					delete(self.dqt, i)
+				}
+			}
+			xsl.Add(seg)
+		}
+		self.sl = xsl
+	}
+}
 // Normally you don't need to call LoadBytes() as it is called from NewExifInjector()
 // The call sets .Jpeg and initializes interim data structures for .Inject()ion.
 func (self *ExifInjector) LoadBytes(data []byte) error {
@@ -146,6 +193,7 @@ func (self *ExifInjector) LoadBytes(data []byte) error {
 	if e != nil {
 		return newError("ParseBytes: %v", e)
 	}
+	self.saveDQT()
 	e = self.makeRootIfdBuilder()
 	if e != nil {
 		return newError("makeRootIfdBuilder: %v", e)
@@ -191,6 +239,7 @@ func (self *ExifInjector) Inject() error {
 	if e = self.sl.SetExif(self.rootIb); e != nil {
 		return newError("Cannot SetExif: %v", e)
 	}
+	self.restoreDQT()
 
 	buf := new(bytes.Buffer)
 	if e = self.sl.Write(buf); e != nil {
@@ -199,6 +248,7 @@ func (self *ExifInjector) Inject() error {
 	self.Jpeg = buf.Bytes()
 
 	fmt.Println("EXIF added:")
+	fmt.Printf("SL=%#v\n", self.sl)
 	self.sl.Print()
 	// self.sl.Validate(???)
 	return nil
@@ -208,6 +258,7 @@ func NewExifInjector(data []byte) (*ExifInjector, error) {
 	ei := new(ExifInjector)
 	err := ei.LoadBytes(data)
 	fmt.Println("Loaded:")
+	fmt.Printf("SL=%#v\n", ei.sl)
 	ei.sl.Print()
 	return ei, err
 }
