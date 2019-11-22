@@ -9,6 +9,42 @@ import (
 	"time"
 	"testing"
 )
+var imgPath = path.Join(os.TempDir(), "go-basler-pylon-test")
+
+type Timer struct {
+	Count int
+	Min, Max, Taken, Average float64
+	Start, Last time.Time
+	Elapsed, Total time.Duration
+}
+func (self *Timer) Update() {
+	now := time.Now()
+	self.Elapsed = now.Sub(self.Last)
+	self.Total = now.Sub(self.Start)
+	self.Last = now
+	self.Taken = self.Elapsed.Seconds()
+	if self.Count == 0 {
+		self.Min = self.Taken
+		self.Max = self.Taken
+	} else {
+		if self.Min > self.Taken { self.Min = self.Taken; }
+		if self.Max < self.Taken { self.Max = self.Taken; }
+	}
+	self.Count += 1
+	self.Average = self.Total.Seconds() / float64(self.Count)
+}
+
+func NewTimer() Timer {
+	var t Timer
+	t.Start = time.Now()
+	t.Last = t.Start
+	t.Elapsed = t.Last.Sub(t.Start)
+	t.Total = t.Elapsed
+	t.Taken = t.Elapsed.Seconds()
+	t.Min = t.Taken
+	t.Max = t.Taken
+	return t
+}
 
 func try(t *testing.T, e error, args ...string) {
 	if len(args) > 1 { panic("try(*testing.T, error[, \"format\"])"); }
@@ -17,16 +53,15 @@ func try(t *testing.T, e error, args ...string) {
 	if e != nil { t.Fatalf(format, e); }
 }
 
-func time2name(t time.Time, suffix string) string {
+func time2name(t time.Time) string {
 	nsecs := t.Unix() * 1000000000 + int64(t.Nanosecond())
-	return fmt.Sprintf("%x%s", nsecs / 1000, suffix)
+	return fmt.Sprintf("%013x", nsecs / 1000)
 }
 
 func TestStart(t *testing.T) {
 	// mw := im_setup(); defer im_cleanup(mw)
 
 	cam := &Camera{}
-	imgPath := path.Join(os.TempDir(), "go-basler-pylon-test")
 	os.RemoveAll(imgPath)
 
 	try(t, os.MkdirAll(imgPath, 0777))
@@ -43,23 +78,27 @@ func TestStart(t *testing.T) {
 		i.FullName, i.SerialNumber, i.DeviceVersion)
 
 	var saved []string
+	total := NewTimer()
 
 	FrameCallback := func(w, h, pxt, size int, buffer []byte) int {
 		pt := EPixelType(pxt)
 		fmt.Printf("FrameCallback(w=%#v, h=%#v, pt=%08x=%s, size=%#v, buffer=%#v...)\n",
 			   w, h, pxt, pt.String(), size, buffer[0])
-		t1 := time.Now()
+		tx := NewTimer()
 		// DO STUFF FROM HERE
 
-		path := filepath.Join(imgPath, time2name(t1.UTC(), ".jpg"))
+		path := filepath.Join(imgPath, time2name(tx.Last.UTC()))
 
-		try(t, go_save2jpeg(path, w, h, buffer))	// vanilla Go
+		try(t, saveRaw(path + ".raw", buffer))
+		// try(t, go_save2jpeg(path + ".jpg", w, h, buffer))	// vanilla Go
 		// try(t, im_save2jpeg(mw, path, w, h, buffer))	// ImageMagick
 
 		saved = append(saved, path)
 
 		// UNTIL HERE
-		fmt.Printf("FrameCallback taken %v\n\n", time.Now().Sub(t1))
+		tx.Update()
+		total.Update()
+		fmt.Printf("FrameCallback taken %v\n\n", tx.Elapsed)
 		return 0
 	}
 
@@ -67,6 +106,9 @@ func TestStart(t *testing.T) {
 	cam.SetFetchCount(10)
 	cb := FrameCallbackType(FrameCallback)
 	try(t, cam.Fetch(cb), "Fetch failed: %v")
+
+	fmt.Printf("Total esapsed %v over %d iterations at about %.3f sec each [%.3f..%.3f]\n",
+		   total.Total, total.Count, total.Average, total.Min, total.Max)
 /*
 	if len(saved) > 0 {
 		try(t, im_show(mw, saved[len(saved) / 2]),

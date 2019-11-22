@@ -35,6 +35,8 @@ func name2path(name string) (string, error) {
 /*******************************************************************************
  * types to carry lists of EXIF tags to be injected
  */
+type Exif map[string]interface{}
+
 type ExifTag struct {
 	Path string
 	Name string
@@ -248,7 +250,6 @@ func (self *ExifInjector) Inject() error {
 	self.Jpeg = buf.Bytes()
 
 	fmt.Println("EXIF added:")
-	fmt.Printf("SL=%#v\n", self.sl)
 	self.sl.Print()
 	// self.sl.Validate(???)
 	return nil
@@ -258,7 +259,6 @@ func NewExifInjector(data []byte) (*ExifInjector, error) {
 	ei := new(ExifInjector)
 	err := ei.LoadBytes(data)
 	fmt.Println("Loaded:")
-	fmt.Printf("SL=%#v\n", ei.sl)
 	ei.sl.Print()
 	return ei, err
 }

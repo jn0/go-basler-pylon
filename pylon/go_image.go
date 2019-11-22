@@ -9,7 +9,6 @@ import (
 	"bytes"
 	"image"
 	"image/jpeg"
-	"time"
 )
 
 const JpegFileSuffix = ".jpg"
@@ -29,6 +28,24 @@ func writeTo(path string, data []byte) error {
 				len(data), path, e)
 	}
 	return nil
+}
+
+var saveRaw = writeTo
+
+func loadRaw(path string) (data []byte, e error) {
+	f, e := os.Open(path)
+	if e != nil { return nil, newError("Cannot Open(%+q): %v", path, e); }
+	defer f.Close()
+	s, e := f.Stat()
+	if e != nil { return nil, newError("Cannot Stat(%+q): %v", path, e); }
+	data = make([]byte, s.Size())
+	n, e := f.Read(data)
+	if e != nil { return nil, newError("Cannot Read(%+q): %v", path, e); }
+	if n != len(data) {
+		return data, newError("Read(%+q) returned %d instead of %d",
+					path, n, len(data))
+	}
+	return data, nil
 }
 
 /*
@@ -105,40 +122,7 @@ func writeTo(path string, data []byte) error {
 */
 
 // makeExif(jpegData) --> (exifData, error)
-func makeExif(jpg []byte) ([]byte, error) {
-	hostname, err := os.Hostname()
-	if err != nil { panic("No host name!"); }
-
-
-	var tags = map[string]interface{}{
-		"DateTime": TimestampExifTagValue(time.Now().UTC()),
-		"Copyright": StringExifTagValue(
-		  "Copyright, Inbase of Nekst LLC, 2019. All rights reserved."),
-		"Make": StringExifTagValue("Inbase"),
-		"Model": StringExifTagValue("Upyr1"),
-		"Software": StringExifTagValue("U1 by Inbase"),
-		"Artist": StringExifTagValue("Inbase Upyr1 Bot"),
-		"HostComputer": StringExifTagValue(hostname),
-
-		"UserComment": UserCommentExifTagValue("TEST COMMENT"),
-
-		"ExposureTime": RationalExifTagValue(1, 350),
-		"FNumber": RationalExifTagValue(14, 10),
-
-		"ColorSpace": ShortExifTagValue(65535),
-		"Sharpness": ShortExifTagValue(0),
-		"SubjectDistanceRange": ShortExifTagValue(3),
-		"ISOSpeedRatings": ShortExifTagValue(2),
-		"ShutterSpeedValue": SRationalExifTagValue(12287712, 1000000),
-		"ApertureValue": RationalExifTagValue(1, 1),
-		"FocalLength": RationalExifTagValue(25, 1),
-
-		"GPSLatitudeRef": StringExifTagValue("N"),
-		"GPSLatitude": RationalExifTagValue(5575564, 100000),
-		"GPSLongitudeRef": StringExifTagValue("E"),
-		"GPSLongitude": RationalExifTagValue(3756544, 100000),
-	}
-
+func makeExif(jpg []byte, tags Exif) ([]byte, error) {
 	if injector, e := NewExifInjector(jpg); e != nil {
 		return nil, newError("NewExifInjector: %v", e)
 	} else {
@@ -156,7 +140,7 @@ func makeExif(jpg []byte) ([]byte, error) {
 }
 
 // go_save2jpeg: native Go implementation
-func go_save2jpeg(path string, width, height int, data []byte) (e error) {
+func go_save2jpeg(path string, width, height int, data []byte, tags Exif) (e error) {
 	raw := image.NewGray(image.Rect(0, 0, width, height))
 	raw.Pix = data
 
@@ -167,20 +151,25 @@ func go_save2jpeg(path string, width, height int, data []byte) (e error) {
 	}
 	jpg := tmp.Bytes()
 
-	jfif, e := makeExif(jpg)
-	if e != nil {
-		return newError("Cannot makeExif(): %v", e)
+	var jfif []byte
+	if tags != nil {
+		jfif, e = makeExif(jpg, tags)
+		if e != nil {
+			return newError("Cannot makeExif(): %v", e)
+		}
+		fmt.Printf("jfif(%d): %v\n", len(jfif), jfif[:32])
 	}
-	fmt.Printf("jfif(%d): %v\n", len(jfif), jfif[:32])
 
 	e = writeTo(path, jpg)
 	if e != nil {
 		return newError("Cannot writeTo(%q): %v", path, e)
 	}
 
-	e = writeTo(path + JpegFileSuffix, jfif)
-	if e != nil {
-		return newError("Cannot writeTo(%q): %v", path + JpegFileSuffix, e)
+	if tags != nil {
+		e = writeTo(path + JpegFileSuffix, jfif)
+		if e != nil {
+			return newError("Cannot writeTo(%q): %v", path + JpegFileSuffix, e)
+		}
 	}
 
 	fmt.Printf("Written to %#v\n", path)
