@@ -1,3 +1,21 @@
+#if __GNUC__ < 6 && __cplusplus
+/* Jetson has ubuntu 16.04 and gcc 5.4 (and golang 1.6, but it's unusable) */
+#define JETSON 1
+
+/* It rendered bad idea to add the option to `CGO_CPPFLAGS`. I dunno why. */
+#pragma GCC diagnostic warning "-std=c++11"
+
+/* Heh, even with c++11 it has no `nullptr`, damn. */
+#ifndef nullptr
+#define nullptr (0)
+#endif
+
+/* Pylon5 lacks some entries on arm64... */
+/* Bus 002 Device 002: ID 2676:ba02 Basler AG ace */
+#define BASLER_ACE_VENDOR_ID "2676"
+#define BASLER_ACE_PRODUCT_ID "ba02"
+#endif /* __GNUC__ < 6 */
+
 #include <cstdlib>
 
 // Include files to use the PYLON API.
@@ -260,8 +278,13 @@ std::string CameraWrapper::openCamera() {
     this->modelName.assign(INFOS(info, ModelName));
     this->serialNumber.assign(INFOS(info, SerialNumber));
     this->deviceVersion.assign(INFOS(info, DeviceVersion));
+#ifdef JETSON
+    this->productId.assign(BASLER_ACE_VENDOR_ID);
+    this->vendorId.assign(BASLER_ACE_PRODUCT_ID);
+#else
     this->productId.assign(INFOS(info, ProductId));
     this->vendorId.assign(INFOS(info, VendorId));
+#endif
 
 #ifdef VERBOSE
     std::cerr << "Camera [" << this->Width() << "×" << this->Height() << "]" << std::endl
