@@ -181,6 +181,21 @@ var (
 		"This category includes items available for an io virtual line 3 rising edge event",
 		"This category includes items available for an io virtual line 4 rising edge event",
 		"This category includes items used to conduct file operations",
+		"USB SequencerControl group",	// USB specific
+		"USB PGIControl group",
+		"USB AutoFunctionROIControl group",
+		"USB SoftwareSignalControl group",
+		"USB EventExposureEndData group",
+		"USB EventFrameStartData group",
+		"USB EventFrameBurstStartData group",
+		"USB EventFrameStartOvertriggerData group",
+		"USB EventFrameBurstStartOvertriggerData group",
+		"USB EventTestData group",
+		"USB EventCriticalTemperatureData group",
+		"USB EventOverTemperatureData group",
+		"USB EventFrameStartWaitData group",
+		"USB EventFrameBurstStartWaitData group",
+		"USB RemoveParameterLimitControl group",
 	}
 
 	groupParamName = [...]string{
@@ -234,6 +249,21 @@ var (
 		"VirtualLine3RisingEdgeEventData",
 		"VirtualLine4RisingEdgeEventData",
 		"FileAccessControl",
+		"SequencerControl",	// USB specific
+		"PGIControl",
+		"AutoFunctionROIControl",
+		"SoftwareSignalControl",
+		"EventExposureEndData",
+		"EventFrameStartData",
+		"EventFrameBurstStartData",
+		"EventFrameStartOvertriggerData",
+		"EventFrameBurstStartOvertriggerData",
+		"EventTestData",
+		"EventCriticalTemperatureData",
+		"EventOverTemperatureData",
+		"EventFrameStartWaitData",
+		"EventFrameBurstStartWaitData",
+		"RemoveParameterLimitControl",
 	}
 
 	// SequenceControl - This category includes items that control the sequencer feature
