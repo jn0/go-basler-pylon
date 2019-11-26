@@ -703,7 +703,66 @@ var (
 	FileSize              = Param{Name: "FileSize", OriginalType: OriginalTypeGenApiIInteger, Description: "Represents the size of the selected file.", Group: FileAccessControl}
 	FileOperationExecute  = Param{Name: "FileOperationExecute", OriginalType: OriginalTypeGenApiICommand, Description: "Executes the selected operation.", Group: FileAccessControl}
 )
-
+var ( // updated for Pylon5, USB, and Ace
+AutoExposureTimeUpperLimit = Param{
+        Name: "AutoExposureTimeUpperLimit",
+        OriginalType: OriginalTypeGenApiIFloat,
+        Description: "Upper limit of the Auto Exposure Time () [us] parameter.",
+        Group: AutoFunctions }
+AutoExposureTimeLowerLimit = Param{
+        Name: "AutoExposureTimeLowerLimit",
+        OriginalType: OriginalTypeGenApiIFloat,
+        Description: "Lower limit of the Auto Exposure Time () [us] parameter.",
+        Group: AutoFunctions }
+PgiMode = Param{
+        Name: "PgiMode",
+        OriginalType: OriginalTypeGenApiIEnumerationT,
+        Description: "Enables Basler PGI image optimizations.",
+        Group: AutoFunctions }
+NoiseReduction = Param{
+        Name: "NoiseReduction",
+        OriginalType: OriginalTypeGenApiIFloat,
+        Description: "Amount of noise reduction to apply." +
+		     " The higher the value, the less chroma noise will be" +
+		     " visible in your images. However, too high values may" +
+		     " result in image information loss. To enable this feature," +
+		     " the DemosaicingMode parameter must be set to BaslerPGI.",
+        Group: AutoFunctions }
+DemosaicingMode = Param{
+        Name: "DemosaicingMode",
+        OriginalType: OriginalTypeGenApiIEnumerationT,
+        Description: "Sets the demosaicing mode.",
+        Group: AutoFunctions }
+SharpnessEnhancement = Param{
+        Name: "SharpnessEnhancement",
+        OriginalType: OriginalTypeGenApiIFloat,
+        Description: "Amount of sharpening to apply." +
+		     " The higher the sharpness, the more distinct the image" +
+		     " subject's contours will be. However, too high values" +
+		     " may result in image information loss." +
+		     " To enable this feature, the DemosaicingMode parameter" +
+		     " must be set to BaslerPGI.",
+        Group: AutoFunctions }
+AutoTargetBrightness = Param{
+        Name: "AutoTargetBrightness",
+        OriginalType: OriginalTypeGenApiIFloat,
+        Description: "Target average brightness for the gain auto function" +
+		     " and the exposure auto function." +
+		     " Applies to: ace, dart, pulse",
+        Group: AutoFunctions }
+AutoGainUpperLimit = Param{
+        Name: "AutoGainUpperLimit",
+        OriginalType: OriginalTypeGenApiIFloat,
+        Description: "Upper limit for the Gain parameter when the gain auto" +
+		     " function is active. Applies to: ace, dart, pulse",
+        Group: AutoFunctions }
+AutoGainLowerLimit = Param{
+        Name: "AutoGainLowerLimit",
+        OriginalType: OriginalTypeGenApiIFloat,
+        Description: "Lower limit for the Gain parameter when the gain auto" +
+		     " function is active. Applies to: ace, dart, pulse",
+        Group: AutoFunctions }
+)
 var (
 	GigEParams = ParamList{
 		SequenceEnable,

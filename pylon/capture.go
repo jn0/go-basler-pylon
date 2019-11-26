@@ -176,33 +176,33 @@ func (cam *Camera) SetParam(p Param, value interface{}) error {
 			defer C.free(unsafe.Pointer(cValue))
 			C.setNodeMapEnumParam(cName, cValue)
 		case OriginalTypeGenApiIString, OriginalTypeGenApiICommand:
-			return newError("SetParam: Original type %s not implemented.",
-					  p.OriginalType)
+			return newError("SetParam(%+q, %v): Original type %s not implemented.",
+					  p.Name, value, p.OriginalType)
 		default:
-			return newError("SetParam: Unexpected string for type %s",
-					  p.OriginalType)
+			return newError("SetParam(%+q, %v): Unexpected string for type %s",
+					  p.Name, value, p.OriginalType)
 		}
 
 	case int64:
 		if p.OriginalType != OriginalTypeGenApiIInteger {
-			return newError("SetParam: Unexpected int64 for type %s",
-					  p.OriginalType)
+			return newError("SetParam(%+q, %v): Unexpected int64 for type %s",
+					  p.Name, value, p.OriginalType)
 		}
 		cValue := C.int(v)
 		C.setNodeMapIntParam(cName, cValue)
 
 	case float64:
 		if p.OriginalType != OriginalTypeGenApiIFloat {
-			return newError("SetParam: Unexpected float64 for type %s",
-					  p.OriginalType)
+			return newError("SetParam(%+q, %v): Unexpected float64 for type %s",
+					  p.Name, value, p.OriginalType)
 		}
 
 		cValue := C.double(v)
 		C.setNodeMapFloatParam(cName, cValue)
 
 	default:
-		return newError("SetParam: Value type %T of param %s not implemented.",
-				  value, p.Name)
+		return newError("SetParam(%+q, %v): Value type %T is not implemented.",
+				  p.Name, value, value)
 	}
 	return nil
 }

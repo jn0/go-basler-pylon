@@ -67,6 +67,7 @@ class CameraWrapper {
 	const std::string openState(std::string prefix) {
 		return prefix + (isOpen() ? "open" : "closed");
 	}
+	inline GenApi::INode* getNode(const GenICam::gcstring name);
 
     private: // device info & getters
 	Pylon::CInstantCamera::DeviceInfo_t info() { return this->camera.GetDeviceInfo(); }
@@ -221,6 +222,13 @@ void setFetchCount(uint32_t v) { CAMERA(setFetchCount, v); }
 /*
  * EXTERNALLY VISIBLE END
  ******************************************************************************/
+
+inline GenApi::INode* CameraWrapper::getNode(const GenICam::gcstring name) {
+    GenApi::INode *p = this->camera.GetNodeMap().GetNode(name);
+    // std::cerr << "getNode(" << name << "): " << p << ";" << std::endl;
+    if (!p) std::cerr << "getNode(" << name << "): none found" << std::endl;
+    return p;
+}
 
 static inline std::string ExceptionValue(const char* func,
 					 GenICam::GenericException &e) {
@@ -511,9 +519,18 @@ std::string CameraWrapper::configureCamera() {
 
 std::string CameraWrapper::setNodeMapIntParam(const GenICam::gcstring name,
 					      int64_t value) {
+    GenApi::INode* node = this->getNode(name);
+    if (!node) {
+    	std::string msg = "";
+	msg += __func__;
+	msg += ": no node '";
+    	msg += name;
+    	msg += "'";
+	std::cerr << msg << std::endl;
+	return msg;
+    }
     try {
-	GenApi::CIntegerPtr(this->camera.GetNodeMap().GetNode(name)
-			   )->SetValue(value);
+	GenApi::CIntegerPtr(node)->SetValue(value);
     } catch (GenICam::GenericException &e) {
 	return ExceptionValue(__func__, e);
     }
@@ -522,8 +539,18 @@ std::string CameraWrapper::setNodeMapIntParam(const GenICam::gcstring name,
 
 std::string CameraWrapper::setNodeMapFloatParam(const GenICam::gcstring name,
 						double value) {
+    GenApi::INode* node = this->getNode(name);
+    if (!node) {
+    	std::string msg = "";
+	msg += __func__;
+	msg += ": no node '";
+    	msg += name;
+    	msg += "'";
+	std::cerr << msg << std::endl;
+	return msg;
+    }
     try {
-	GenApi::CFloatPtr(this->camera.GetNodeMap().GetNode(name))->SetValue(value);
+	GenApi::CFloatPtr(node)->SetValue(value);
     } catch (GenICam::GenericException &e) {
 	return ExceptionValue(__func__, e);
     }
@@ -532,9 +559,18 @@ std::string CameraWrapper::setNodeMapFloatParam(const GenICam::gcstring name,
 
 std::string CameraWrapper::setNodeMapEnumParam(const GenICam::gcstring name,
 					       const GenICam::gcstring value) {
+    GenApi::INode* node = this->getNode(name);
+    if (!node) {
+    	std::string msg = "";
+	msg += __func__;
+	msg += ": no node '";
+    	msg += name;
+    	msg += "'";
+	std::cerr << msg << std::endl;
+	return msg;
+    }
     try {
-	GenApi::CEnumerationPtr(this->camera.GetNodeMap().GetNode(name)
-				)->FromString(value);
+	GenApi::CEnumerationPtr(node)->FromString(value);
     } catch (GenICam::GenericException &e) {
 	return ExceptionValue(__func__, e);
     }
