@@ -45,7 +45,6 @@ int vendorId();
 int width();
 int height();
 
-// typedef int (*FrameCallbackType)(int w, int h, int pxt, int size, const char* buffer);
 extern int Go_fetch_callback(int, int, int, int, int, char*);
 
 void setFetchTimeout(uint32_t v);

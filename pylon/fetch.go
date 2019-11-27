@@ -30,8 +30,8 @@ func Go_fetch_callback(i C.int,				// callback index
 		fmt.Printf("\ncallback(w=%#v, h=%#v, pxt=%#v, size=%#v, buf=%#v)\n",
 			   W, H, P, Z, B[0])
 	}
-	f := cbreg.Get(int(i))
-	rc := C.int(f(W, H, P, Z, B))
+	f, cam := cbreg.Get(int(i))
+	rc := C.int(f(cam.(*Camera), W, H, P, Z, B))
 	return rc
 }
 
@@ -93,8 +93,9 @@ func do() {
 	}
 }
 */
-func (cam *Camera) Fetch(cb func(w, h, pt, size int, buffer []byte) int) error {
+func (cam *Camera) Fetch(cb func(c *Camera, w, h, pt, size int, buffer []byte) int) error {
 	idx := cbreg.Add(cb)
+	cbreg.Annotate(idx, cam)
 	s := C.GoString(C.fetch(C.int(idx)));
 	if s != "" {
 		return newError("Fetch: %v", s)

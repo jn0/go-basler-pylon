@@ -11,7 +11,7 @@ import "sync"
 // The type of callback function.
 // It recieves the grabbed image with width of `w`, height of `h`,
 // and pixel type of `pxt` in `buffer` of `size` bytes.
-type FrameCallbackType func(w, h, pxt, size int, buffer []byte) int
+type FrameCallbackType func(c *Camera, w, h, pxt, size int, buffer []byte) int
 
 // I do not want uncontrolled growth of the Registry. So, impose the limit.
 const MAX_REG = 128
@@ -20,6 +20,7 @@ const MAX_REG = 128
 type Registry struct {
 	slot int
 	reg map[int]FrameCallbackType
+	ann map[int]interface{}
 	lock sync.Mutex
 }
 
@@ -28,6 +29,7 @@ func (r *Registry) init() {
 	r.lock.Lock(); defer r.lock.Unlock()
 	if r.reg == nil {
 		r.reg = make(map[int]FrameCallbackType)
+		r.ann = make(map[int]interface{})
 		r.slot = 0
 	}
 }
@@ -46,15 +48,25 @@ func (r *Registry) Add(f FrameCallbackType) int {
 	return r.slot - 1
 }
 
+func (r *Registry) Annotate(i int, a interface{}) {
+	r.init()
+	r.lock.Lock(); defer r.lock.Unlock()
+	if r.slot >= MAX_REG {
+		panic("Registry overflow")
+	}
+	if i >= r.slot { panic("Bad indedx"); }
+	r.ann[i] = a
+}
+
 // Retruns the registered callback for given index, if any.
-func (r *Registry) Get(i int) FrameCallbackType {
+func (r *Registry) Get(i int) (FrameCallbackType, interface{}) {
 	if r.reg == nil || r.slot == 0 {
 		panic("The registry is empty")
 	}
 	if i < 0 || i >= r.slot {
 		panic("Bad registry index")
 	}
-	return r.reg[i]
+	return r.reg[i], r.ann[i]
 }
 
 // static object: global registry

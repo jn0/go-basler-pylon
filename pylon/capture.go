@@ -23,6 +23,10 @@ type Camera struct {
 	startMutex, attachedMutex, openMutex sync.Mutex
 }
 
+func (cam *Camera) Pointer() unsafe.Pointer {
+	return unsafe.Pointer(cam)
+}
+
 func (cam *Camera) Info() (*CameraInfo, error) {
 	if !C.isAttached() {
 		return nil, newError("Info: No device attached")
@@ -213,11 +217,12 @@ func (cam *Camera) GetParam(p Param) (value interface{}, e error) {
 		return nil, newError("GetParam: Camera is not open.")
 	}
 
+/*
 	cam.startMutex.Lock(); defer cam.startMutex.Unlock()
 	if C.isCameraGrabbing() {
 		return nil, newError("GetParam: Camera is grabbing.")
 	}
-
+*/
 	cName := C.CString(p.Name); defer C.free(unsafe.Pointer(cName))
 
 	switch p.OriginalType {

@@ -92,7 +92,7 @@ func TestStart(t *testing.T) {
 	var saved []string
 	total := NewTimer()
 
-	FrameCallback := func(w, h, pxt, size int, buffer []byte) int {
+	FrameCallback := func(cam *Camera, w, h, pxt, size int, buffer []byte) int {
 		pt := EPixelType(pxt)
 		t.Logf("FrameCallback(w=%#v, h=%#v, pt=%08x=%s, size=%#v, buffer=%#v...)",
 			w, h, pxt, pt.String(), size, buffer[0])
