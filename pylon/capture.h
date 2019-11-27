@@ -30,6 +30,9 @@ const char* setHardwareTriggerConfiguration();
 const char* setNodeMapIntParam(char* name, int value);
 const char* setNodeMapFloatParam(char* name, double value);
 const char* setNodeMapEnumParam(char* name, char* value);
+const char* getNodeMapIntParam(char *name, int64_t *value);
+const char* getNodeMapFloatParam(char *name, double *value);
+const char* getNodeMapEnumParam(char *name, char *value);
 
 const char* fullName();
 const char* vendorName();

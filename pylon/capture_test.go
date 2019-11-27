@@ -77,13 +77,25 @@ func TestStart(t *testing.T) {
 		i.Width, i.Height, i.ModelName, i.VendorName,
 		i.FullName, i.SerialNumber, i.DeviceVersion)
 
+	v1, e := cam.GetParam(AutoGainUpperLimit)
+	try(t, e)
+	t.Logf("AutoGainUpperLimit=%#v (%T)", v1, v1)
+
+	v2, e := cam.GetParam(GainAuto)
+	try(t, e)
+	t.Logf("GainAuto=%#v (%T)", v2, v2)
+
+	v3, e := cam.GetParam(SensorWidth)
+	try(t, e)
+	t.Logf("SensorWidth=%#v (%T)", v3, v3)
+
 	var saved []string
 	total := NewTimer()
 
 	FrameCallback := func(w, h, pxt, size int, buffer []byte) int {
 		pt := EPixelType(pxt)
-		fmt.Printf("FrameCallback(w=%#v, h=%#v, pt=%08x=%s, size=%#v, buffer=%#v...)\n",
-			   w, h, pxt, pt.String(), size, buffer[0])
+		t.Logf("FrameCallback(w=%#v, h=%#v, pt=%08x=%s, size=%#v, buffer=%#v...)",
+			w, h, pxt, pt.String(), size, buffer[0])
 		tx := NewTimer()
 		// DO STUFF FROM HERE
 
@@ -98,7 +110,7 @@ func TestStart(t *testing.T) {
 		// UNTIL HERE
 		tx.Update()
 		total.Update()
-		fmt.Printf("FrameCallback taken %v\n\n", tx.Elapsed)
+		t.Logf("FrameCallback taken %v", tx.Elapsed)
 		return 0
 	}
 
@@ -107,14 +119,9 @@ func TestStart(t *testing.T) {
 	cb := FrameCallbackType(FrameCallback)
 	try(t, cam.Fetch(cb), "Fetch failed: %v")
 
-	fmt.Printf("Total esapsed %v over %d iterations at about %.3f sec each [%.3f..%.3f]\n",
+	t.Logf("Total esapsed %v over %d iterations at about %.3f sec each [%.3f..%.3f]",
 		   total.Total, total.Count, total.Average, total.Min, total.Max)
-/*
-	if len(saved) > 0 {
-		try(t, im_show(mw, saved[len(saved) / 2]),
-			"im_show(" + saved[len(saved) / 2] + "): %v")
-	}
-*/
+
 	if f, e := os.Open(imgPath); e != nil {
 		t.Fatalf("os.Open(%#v) failed: %v", imgPath, e)
 	} else if n, e := f.Readdirnames(-1); e != nil {
@@ -125,6 +132,7 @@ func TestStart(t *testing.T) {
 		t.Logf("Scanned %s", n[0])
 	}
 }
+
 /*
 func TestHardwareTrigger(t *testing.T) {
 	cam := &Camera{}

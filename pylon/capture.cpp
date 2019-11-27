@@ -50,10 +50,16 @@ class CameraWrapper {
         std::string startCapture(int max);
         std::string configureCamera();
         std::string setHardwareTriggerConfiguration();
+
+
         std::string setNodeMapIntParam(const GenICam::gcstring,int64_t);
         std::string setNodeMapFloatParam(const GenICam::gcstring, double);
         std::string setNodeMapEnumParam(const GenICam::gcstring,
 					const GenICam::gcstring);
+        std::string getNodeMapIntParam(const GenICam::gcstring, int64_t*);
+        std::string getNodeMapFloatParam(const GenICam::gcstring, double*);
+        std::string getNodeMapEnumParam(const GenICam::gcstring, GenICam::gcstring*);
+
 	std::string fetch(int idx);
 
 	static const int NoIntValue = -1;
@@ -182,7 +188,6 @@ const char* setNodeMapIntParam(char* name, int value) {
     std::string msg = CAMERA(setNodeMapIntParam, op, (int64_t)value);
     TRACE(msg, op, (int64_t)value);
     return msg.c_str();
-
 }
 const char* setNodeMapFloatParam(char* name, double value) {
     GenICam::gcstring op;
@@ -190,7 +195,6 @@ const char* setNodeMapFloatParam(char* name, double value) {
     std::string msg = CAMERA(setNodeMapFloatParam, op, value);
     TRACE(msg, op, value);
     return msg.c_str();
-
 }
 const char* setNodeMapEnumParam(char* name, char* value) {
     GenICam::gcstring op, v;
@@ -198,6 +202,31 @@ const char* setNodeMapEnumParam(char* name, char* value) {
     v.assign(value);
     std::string msg = CAMERA(setNodeMapEnumParam, op, v);
     TRACE(msg, op, v);
+    return msg.c_str();
+}
+
+const char* getNodeMapIntParam(char *name, int64_t *value) {
+    GenICam::gcstring op;
+    op.assign(name);
+    std::string msg = CAMERA(getNodeMapIntParam, op, (int64_t*)value);
+    TRACE(msg, op, (int64_t)(*value));
+    return msg.c_str();
+}
+
+const char* getNodeMapFloatParam(char *name, double *value) {
+    GenICam::gcstring op;
+    op.assign(name);
+    std::string msg = CAMERA(getNodeMapFloatParam, op, value);
+    TRACE(msg, op, *value);
+    return msg.c_str();
+}
+
+const char* getNodeMapEnumParam(char *name, char *value) {
+    GenICam::gcstring op, v;
+    op.assign(name);
+    std::string msg = CAMERA(getNodeMapEnumParam, op, &v);
+    TRACE(msg, op, v);
+    strcpy(value, v.c_str());
     return msg.c_str();
 }
 
@@ -517,18 +546,21 @@ std::string CameraWrapper::configureCamera() {
     return "";
 }
 
+#define CHECK_NODE(fn, node, name)		\
+    if (!(node)) {				\
+    	std::string msg = "";			\
+	msg += fn;				\
+	msg += ": no node '";			\
+    	msg += name;				\
+    	msg += "'";				\
+	std::cerr << msg << std::endl;		\
+	return msg;				\
+    }
+
 std::string CameraWrapper::setNodeMapIntParam(const GenICam::gcstring name,
 					      int64_t value) {
     GenApi::INode* node = this->getNode(name);
-    if (!node) {
-    	std::string msg = "";
-	msg += __func__;
-	msg += ": no node '";
-    	msg += name;
-    	msg += "'";
-	std::cerr << msg << std::endl;
-	return msg;
-    }
+    CHECK_NODE(__func__, node, name);
     try {
 	GenApi::CIntegerPtr(node)->SetValue(value);
     } catch (GenICam::GenericException &e) {
@@ -540,15 +572,7 @@ std::string CameraWrapper::setNodeMapIntParam(const GenICam::gcstring name,
 std::string CameraWrapper::setNodeMapFloatParam(const GenICam::gcstring name,
 						double value) {
     GenApi::INode* node = this->getNode(name);
-    if (!node) {
-    	std::string msg = "";
-	msg += __func__;
-	msg += ": no node '";
-    	msg += name;
-    	msg += "'";
-	std::cerr << msg << std::endl;
-	return msg;
-    }
+    CHECK_NODE(__func__, node, name);
     try {
 	GenApi::CFloatPtr(node)->SetValue(value);
     } catch (GenICam::GenericException &e) {
@@ -560,17 +584,47 @@ std::string CameraWrapper::setNodeMapFloatParam(const GenICam::gcstring name,
 std::string CameraWrapper::setNodeMapEnumParam(const GenICam::gcstring name,
 					       const GenICam::gcstring value) {
     GenApi::INode* node = this->getNode(name);
-    if (!node) {
-    	std::string msg = "";
-	msg += __func__;
-	msg += ": no node '";
-    	msg += name;
-    	msg += "'";
-	std::cerr << msg << std::endl;
-	return msg;
-    }
+    CHECK_NODE(__func__, node, name);
     try {
 	GenApi::CEnumerationPtr(node)->FromString(value);
+    } catch (GenICam::GenericException &e) {
+	return ExceptionValue(__func__, e);
+    }
+    return "";
+}
+
+std::string CameraWrapper::getNodeMapIntParam(const GenICam::gcstring name,
+					      int64_t *value) {
+    GenApi::INode* node = this->getNode(name);
+    CHECK_NODE(__func__, node, name);
+    try {
+	*value = GenApi::CIntegerPtr(node)->GetValue();
+    } catch (GenICam::GenericException &e) {
+	return ExceptionValue(__func__, e);
+    }
+    return "";
+}
+
+std::string CameraWrapper::getNodeMapFloatParam(const GenICam::gcstring name,
+						double *value) {
+    GenApi::INode* node = this->getNode(name);
+    CHECK_NODE(__func__, node, name);
+    try {
+	*value = GenApi::CFloatPtr(node)->GetValue();
+    } catch (GenICam::GenericException &e) {
+	return ExceptionValue(__func__, e);
+    }
+    return "";
+}
+
+std::string CameraWrapper::getNodeMapEnumParam(const GenICam::gcstring name,
+					       GenICam::gcstring *value) {
+    GenApi::StringList_t Symbolics;
+    GenApi::INode* node = this->getNode(name);
+    CHECK_NODE(__func__, node, name);
+    try {
+	GenApi::CEnumerationPtr(node)->GetSymbolics(Symbolics);
+	value->assign(Symbolics[0]); // ??? somehow it works... XXX
     } catch (GenICam::GenericException &e) {
 	return ExceptionValue(__func__, e);
     }

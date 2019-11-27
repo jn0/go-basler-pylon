@@ -206,3 +206,45 @@ func (cam *Camera) SetParam(p Param, value interface{}) error {
 	}
 	return nil
 }
+
+func (cam *Camera) GetParam(p Param) (value interface{}, e error) {
+	cam.openMutex.Lock(); defer cam.openMutex.Unlock()
+	if !C.isOpen() {
+		return nil, newError("GetParam: Camera is not open.")
+	}
+
+	cam.startMutex.Lock(); defer cam.startMutex.Unlock()
+	if C.isCameraGrabbing() {
+		return nil, newError("GetParam: Camera is grabbing.")
+	}
+
+	cName := C.CString(p.Name); defer C.free(unsafe.Pointer(cName))
+
+	switch p.OriginalType {
+	case OriginalTypeGenApiIEnumerationT:
+		cValue := C.CString(string(make([]byte, 512)))
+		defer C.free(unsafe.Pointer(cValue))
+		msg := C.GoString(C.getNodeMapEnumParam(cName, cValue))
+		if len(msg) != 0 {
+			return nil, newError("C.getNodeMapEnumParam: %s", msg)
+		}
+		return C.GoString(cValue), nil
+	// case OriginalTypeGenApiIString:
+	case OriginalTypeGenApiIInteger:
+		cValue := C.int64_t(0)
+		msg := C.GoString(C.getNodeMapIntParam(cName, &cValue))
+		if len(msg) != 0 {
+			return nil, newError("C.getNodeMapEnumParam: %s", msg)
+		}
+		return int64(cValue), nil
+	case OriginalTypeGenApiIFloat:
+		cValue := C.double(0.0)
+		msg := C.GoString(C.getNodeMapFloatParam(cName, &cValue))
+		if len(msg) != 0 {
+			return nil, newError("C.getNodeMapEnumParam: %s", msg)
+		}
+		return float64(cValue), nil
+	}
+	return nil, newError("GetParam(%+q): unsupported type %#v (%T)",
+				p.Name, p.OriginalType, p.OriginalType)
+}
