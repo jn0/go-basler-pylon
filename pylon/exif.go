@@ -10,6 +10,7 @@ import (
 	"encoding/binary"
 	"github.com/dsoprea/go-exif"
 	"github.com/dsoprea/go-jpeg-image-structure"
+	"os"
 )
 
 var ByteOrder = binary.LittleEndian // binary.BigEndian // == exif.TestDefaultByteOrder
@@ -166,6 +167,7 @@ func (self *ExifInjector) HasDQT() bool {
 }
 func (self *ExifInjector) restoreDQT() {
 	if !self.HasDQT() {
+		fmt.Fprintln(os.Stderr, "WARNING: Restoring lost DQT...")
 		if !self.hasSavedDQT() {
 			panic("I have no saved DQT to restore from!")
 		}
