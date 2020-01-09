@@ -197,7 +197,7 @@ func (self *ExifInjector) LoadBytes(data []byte) error {
 	if e != nil {
 		return newError("ParseBytes: %v", e)
 	}
-	self.saveDQT()
+	// self.saveDQT()
 	e = self.makeRootIfdBuilder()
 	if e != nil {
 		return newError("makeRootIfdBuilder: %v", e)
@@ -243,7 +243,7 @@ func (self *ExifInjector) Inject() error {
 	if e = self.sl.SetExif(self.rootIb); e != nil {
 		return newError("Cannot SetExif: %v", e)
 	}
-	self.restoreDQT()
+	// self.restoreDQT()
 
 	buf := new(bytes.Buffer)
 	if e = self.sl.Write(buf); e != nil {
